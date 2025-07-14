@@ -1,0 +1,18 @@
+# .gitlab-ci.yml
+
+# Use an official public Python image from Docker Hub
+image: python:3.9
+
+stages:
+  - test
+
+run-unit-tests:
+  stage: test
+  script:
+    # Install your project's dependencies and pytest
+    # The "." installs from your setup.py file
+    - pip install pytest .
+
+    # Run pytest to discover and run tests
+    # (assumes your tests are in a folder named 'tests')
+    - pytest
