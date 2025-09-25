@@ -1,7 +1,7 @@
 
 # QuantifyDrivers
 
-Implementation of a methodology using explainable ML to quantify drivers of temperature extremes ona daily basis.
+Implementation of a methodology using explainable ML to quantify drivers of temperature extremes on a daily basis.
 
 ---
 
