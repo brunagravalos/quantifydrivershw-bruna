@@ -1,7 +1,0 @@
-Best hyperparameters for site: lyon
-Best trial score: 0.5825
-
-lr: 0.000311
-w_decay: 0.077933
-batch_size: 64
-minority_weight_multiplier: 6.010581
