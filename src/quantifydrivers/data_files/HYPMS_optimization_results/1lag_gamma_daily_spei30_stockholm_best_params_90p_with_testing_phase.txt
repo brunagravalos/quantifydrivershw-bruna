@@ -1,0 +1,7 @@
+Best hyperparameters for site: stockholm
+Best trial score: 0.4401
+
+lr: 0.000418
+w_decay: 0.004318
+batch_size: 16
+minority_weight_multiplier: 0.704098

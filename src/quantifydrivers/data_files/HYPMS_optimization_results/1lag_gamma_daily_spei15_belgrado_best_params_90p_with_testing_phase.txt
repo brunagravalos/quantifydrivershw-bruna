@@ -1,0 +1,7 @@
+Best hyperparameters for site: belgrado
+Best trial score: 0.3802
+
+lr: 0.000171
+w_decay: 0.006628
+batch_size: 16
+minority_weight_multiplier: 0.629007

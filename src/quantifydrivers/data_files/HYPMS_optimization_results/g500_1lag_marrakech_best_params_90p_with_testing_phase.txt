@@ -1,0 +1,7 @@
+Best hyperparameters for site: marrakech
+Best trial score: 0.4486
+
+lr: 0.000268
+w_decay: 0.007104
+batch_size: 16
+minority_weight_multiplier: 9.807354

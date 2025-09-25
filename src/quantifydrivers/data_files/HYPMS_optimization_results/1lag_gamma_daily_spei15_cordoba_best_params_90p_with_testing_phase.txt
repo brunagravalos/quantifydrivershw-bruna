@@ -1,0 +1,7 @@
+Best hyperparameters for site: cordoba
+Best trial score: 0.3764
+
+lr: 0.000180
+w_decay: 0.000455
+batch_size: 64
+minority_weight_multiplier: 1.689149
