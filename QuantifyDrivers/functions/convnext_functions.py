@@ -1,10 +1,13 @@
 
+# ======================================================================================================
+# IMPORT NEEDED PACKAGES
+# ======================================================================================================
+
 import torch
 from torch import nn
 import torch.nn.functional as F
 import numpy as np
 import random
-
 
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
@@ -12,7 +15,23 @@ torch.use_deterministic_algorithms(True)
 
 from torchvision.ops import stochastic_depth
 
+# ======================================================================================================
+
+
 class PaddedStem(nn.Module):
+
+    ''' 
+    Stem with padding to handle arbitrary input sizes.
+    
+    Args:
+        in_channels (int): Number of input channels.
+        out_channels (int): Number of output channels.
+        patch_size (int): Size of the patch for convolution and stride.
+
+    Returns:
+        Tensor: Output tensor after convolution and normalization.
+    '''
+
     def __init__(self, in_channels, out_channels, patch_size):
         super().__init__()
         self.patch_size = patch_size
@@ -29,8 +48,15 @@ class PaddedStem(nn.Module):
         x = self.norm(x)
         return x
 
+# ------------------------------------------------------------------------------------------------
+# Downsample with padding to handle arbitrary input sizes 
 
 class PaddedDownsample(nn.Module):
+
+    '''
+    Downsample layer with padding to handle arbitrary input sizes.
+    '''
+
     def __init__(self, in_channels, out_channels):
         super().__init__()
         self.norm = LayerNorm(in_channels, eps=1e-6, data_format="channels_first")
@@ -46,6 +72,8 @@ class PaddedDownsample(nn.Module):
         x = self.conv(x)
         return x
 
+# ------------------------------------------------------------------------------------------------
+# LayerNorm class 
 
 class LayerNorm(nn.Module):
 
@@ -70,6 +98,8 @@ class LayerNorm(nn.Module):
             x = self.weight[:, None, None] * x + self.bias[:, None, None]
             return x
 
+# ------------------------------------------------------------------------------------------------
+# Permute class
 
 class Permute(nn.Module):
 
@@ -80,10 +110,10 @@ class Permute(nn.Module):
     def forward(self, x):
         return torch.permute(x, self.dims)
 
+# ------------------------------------------------------------------------------------------------
+# ConvNeXt Block, Layer, and Model classes
 
 class ConvNextBlock(nn.Module):
-
-    
 
     def __init__(self, filter_dim, layer_scale=1e-6): #, dilation=1, padding_mode='zeros'): #original does not have dilation and padding_mode as arguments 
         super().__init__()
@@ -160,32 +190,13 @@ class ConvNext(nn.Module):
 
         self.train_alone = train_alone
 
-        # init downsample layers with stem
-        #self.downsample_layers = nn.ModuleList(
-        #    [nn.Sequential(
-        #        nn.Conv2d(num_channels, layer_dims[0], kernel_size=patch_size, stride=patch_size),
-        #        LayerNorm(layer_dims[0],
-        #                      eps=1e-6,
-        #                      data_format="channels_first")
-        #    )])
-
+     
         self.downsample_layers = nn.ModuleList([
             PaddedStem(num_channels, layer_dims[0], patch_size)
         ])
         
         for idx in range(len(layer_dims) - 1):
-           #self.downsample_layers.append(
-           #    nn.Sequential(
-           #        LayerNorm(layer_dims[idx],
-           #                  eps=1e-6,
-           #                  data_format="channels_first"),
-           #        nn.Conv2d(layer_dims[idx],
-           #                  layer_dims[idx + 1],
-           #                  kernel_size=2,
-           #                  stride=2
-           #                  ),
-           #    ))
-
+         
             self.downsample_layers.append(
                 PaddedDownsample(layer_dims[idx], layer_dims[idx + 1])
             )
@@ -216,107 +227,13 @@ class ConvNext(nn.Module):
             x = downsample_layer(x)
             x = stage_layer(x)
 
-        #if self.train_alone:
-        #    return self.cls(x.mean(dim=(-2, -1)))
-        #else:
-        #    return self.spatial_aggregator(x)  # Use learnable aggregation
-     
         if self.train_alone:
             return self.cls(x.mean(dim=(-2, -1)))
         else:
             return x.mean(dim=(-2, -1))
     
 
-# Sequential ConvNeXt class .....................................................................................
-
-class ConvNextLagProcessor(nn.Module): # Renamed for clarity
-
-    def __init__(self,            
-                 num_variables,   
-                 num_lags,             
-                 num_classes=2,     
-                 
-                 patch_size=4,        
-                 layer_dims=[96, 192, 384, 768], 
-                 depths=[3, 3, 9, 3],  
-                 drop_rate=0.,         
-                
-                 train_alone=True,
-                 combined_hidden_dim=64
-                 ):
-        super().__init__()
-
-        self.num_variables = num_variables
-        self.num_lags = num_lags
-        self.layer_dims = layer_dims 
-        self.train_alone = train_alone
-
-        self.downsample_layers = nn.ModuleList()
-        self.downsample_layers.append(
-            nn.Sequential(
-                nn.Conv2d(num_variables, layer_dims[0], kernel_size=patch_size, stride=patch_size),
-                LayerNorm(layer_dims[0], eps=1e-6, data_format="channels_first")
-            ))
-        for idx in range(len(layer_dims) - 1):
-            self.downsample_layers.append(
-                nn.Sequential(
-                    LayerNorm(layer_dims[idx], eps=1e-6, data_format="channels_first"),
-                    nn.Conv2d(layer_dims[idx], layer_dims[idx + 1], kernel_size=2, stride=2),
-                ))
-
-        drop_rates = [x.item() for x in torch.linspace(0, drop_rate, sum(depths))]
-        self.stage_layers = nn.ModuleList([])
-        for idx, layer_dim in enumerate(layer_dims):
-            layer_dr = drop_rates[sum(depths[:idx]): sum(depths[:idx]) + depths[idx]]
-            self.stage_layers.append(
-                ConvNextLayer(filter_dim=layer_dim, depth=depths[idx], drop_rates=layer_dr))
-       
-        pooled_dim_per_lag = layer_dims[-1]
-        combined_input_dim = self.num_lags * pooled_dim_per_lag
-
-        # FC layer to process the concatenated features from all lags
-        self.fc_combine_lags = nn.Sequential(
-            nn.Linear(combined_input_dim, combined_hidden_dim),
-            # Using ReLU but could use GELU like ConvNextBlock
-            nn.ReLU()
-            # Final Layernorm could be added
-            # nn.LayerNorm(combined_hidden_dim, eps=1e-6)
-        )
-
-        if self.train_alone:
-            self.final_classification = nn.Sequential(
-                 nn.LayerNorm(combined_hidden_dim, eps=1e-6),
-                 nn.Linear(combined_hidden_dim, num_classes)
-            )
-
-    def forward(self, x):
-        # x : (B, V, L, H, W)
-        batch_size = x.size(0)
-        lag_outputs_pooled = [] 
-
-        # Iterate through each time lag (dimension index 2)
-        for t in range(self.num_lags):
-            # Extract the data for the current lag t
-            lag_data = x[:, :, t, :, :]
-
-            x_lag = lag_data
-            all_layers = list(zip(self.downsample_layers, self.stage_layers))
-            for downsample_layer, stage_layer in all_layers:
-                x_lag = downsample_layer(x_lag)
-                x_lag = stage_layer(x_lag)
-          
-            pooled_out = x_lag.mean(dim=(-2, -1))
-            lag_outputs_pooled.append(pooled_out)
-
-       
-        combined_output = torch.cat(lag_outputs_pooled, dim=1)
-
-        hidden = self.fc_combine_lags(combined_output)
-
-        # Return classification logits or hidden features based on the flag
-        if self.train_alone:
-            return self.final_classification(hidden)
-        else:
-            return hidden 
-
+# ======================================================================================================
+# END OF FILE
+# ======================================================================================================
 

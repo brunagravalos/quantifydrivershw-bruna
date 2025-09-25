@@ -1,3 +1,7 @@
+# ======================================================================================================
+# IMPORT NEEDED PACKAGES
+# ======================================================================================================
+
 import os
 os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':16:8'
 import torch
@@ -14,8 +18,8 @@ from torch.utils.data import Dataset, DataLoader, TensorDataset, random_split
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import functions_NN_extremes
-import torch.nn as nn                   # provides classes and functions to create and train neural networks
-import torch.nn.functional as F         # provides functions for activation functions, loss functions, and other operations
+import torch.nn as nn                   
+import torch.nn.functional as F        
 import functions_NN_extremes
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
@@ -27,8 +31,21 @@ import functions_improve_CombinedModel
 import convnext_functions
 import modified_convnext_functions
 import optuna
+from sklearn.metrics import f1_score
+from functions_NN_extremes import ERA5LandDataset_extremes_location_spei
+import gc
+import tqdm
+import argparse
+
+# ======================================================================================================
+
+# DEFINE DEVICE ----------------------------------------------------
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# ------------------------------------------------------------------
+
+# CECK DETERMINISM 
 
 try:
     torch.use_deterministic_algorithms(True)
@@ -43,19 +60,33 @@ def check_seeds():
     print(f"CUDA deterministic: {torch.backends.cudnn.deterministic}")
 check_seeds()
 
-import gc
-import tqdm
-import argparse
 
 # ==================================================================================================================================
 # 1. Global Configuration
 #===================================================================================================================================
+#File paths ERA5 data -----------------------------------------------------------------------------------------------------------------------------------------------------
+        
+file_g500 = "/path/to/your/data/g500_1x1_lagged_standarized_anomalies.nc"
+file_g200 = "/path/to/your/data/g200_1x1_lagged_standarized_anomalies.nc"
+file_psl = "/path/to/your/data/psl_1x1_lagged_standarized_anomalies.nc"
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# File local scale data and extreme classification ------------------------------------------------
+file_local_scale = "/path/to/your/data/lagged_standarized_anomalies_and_extreme_detection.nc"
+    
+# File CO2 data 
+file_CO2 = "/path/to/your/data/CO_data.nc"
 
-# Site to be done  *************************
 
-# Dataloaders and hyperparameter configuration ----------------------------------------------------------------------------------------------------------------------------
+# Percentile that is used to define the extremes in the local scale data
+percentile_to_load = '90p' 
+# SPEI/SPI configuration 
+spei_spi = 'spei'  # 'spi' or 'spei'
+scales_spei = ['30','60']
+distribution = 'gamma'
+
+# =================================================================================================================
+# Dataset, Dataloaders and hyperparameter configuration ----------------------------------------------------------------------------------------------------------------------------
+# =================================================================================================================
 
 HYPMS = dict(
     epochs= 75,
@@ -63,10 +94,12 @@ HYPMS = dict(
     w_decay= 0.01,
 )
 
-# Datasets configuration --------------------------------------------------------------------------------------------------------------------------------------------------
-
+# Start date for all datasets
 start_date = "1950-01-01"
+# Variables large-scale and local scale to use 
+variables_era5 = ['g500','g200','psl']
     
+# Local-scale datasets configuration
 _ERA5LAND_TRAIN_DATASET_CONF = dict(
 start_date= start_date,
 end_date= "2013-12-31",
@@ -79,59 +112,28 @@ end_date= "2023-12-31",
 months = [6,7,8]         
     )
 
+# Large-scale datasets configuration
 _ERA5_TRAIN_DATASET_CONF = dict(
 start_date= start_date,
 end_date= "2013-12-31",
 start_lag = 1,
-lags_era5 = 3,
+lags_era5 = 1,
 months = [6,7,8],
+variables = variables_era5
     )
 
 _ERA5_TEST_DATASET_CONF = dict(
 start_date= "2014-01-01",
 end_date= "2023-12-31",
 start_lag = 1,
-lags_era5 = 3,
-months = [6,7,8]         
+lags_era5 = 1,
+months = [6,7,8],
+variables = variables_era5   
     )
 
 # Number of lags for the larg-scale data ----------------------------------------------------------------------------------------------------------------------------------
+number_lags = _ERA5_TEST_DATASET_CONF['lags_era5']
 
-number_lags = 3
-
-#File paths ERA5 data -----------------------------------------------------------------------------------------------------------------------------------------------------
-        
-file_g500 = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/g500_1x1_lagged_standarized_anomalies.nc"
-file_g200 = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/g200_1x1_lagged_standarized_anomalies.nc"
-file_psl = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/psl_1x1_lagged_standarized_anomalies.nc"
-file_hus850 = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/hus850_lagged_standarized_anomalies.nc"
-file_hus975 = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/hus975_lagged_standarized_anomalies.nc"
-file_rsds = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/rsds_lagged_standarized_anomalies.nc"
-file_hus700 = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/hus700_lagged_standarized_anomalies.nc"
-
-# File CO2 data -----------------------------------------------------------------------------------------------------------------------------------------------------------
-
-file_CO2 = "/home/bsc/bsc167965/TFM/ML/data_files/daily_co2_JJA.nc"
-
-# File local scale data ---------------------------------------------------------------------------------------------------------------------------------------------------
-
-# Defined inside the objective function
-
-
-# Train alone configuration ----------------------------------------------------------------------------------------------------------------------------------------------
-
-# Flags to train CNN and NN separated or not *************************
-
-train_nn_alone = False
-train_cnn_alone = False
-
-
-# Names to save trained models -------------------------------------------------------------------------------------------------------------------------------------------
-
-name_save_CombinedModel = f"CO2_Combinedmodel_trained_with_cnn_nn_trained_together_{number_lags}lags"
-name_save_CNN = "cnn_trained_alone"
-name_save_NN = "nn_trained_alone"
-name_save_losses_fig = f"CO2_Combinedmodel_trained_with_cnn_nn_trained_together_{number_lags}lags"
 
 #===========================================================================================================================================================================
 # DETERMINSIM, SEED CREATION AND SEED RESTART 
@@ -148,8 +150,6 @@ def verify_determinism():
     
     # Check Python random
     print(f"Python random(): {random.random()}")  # Should match
-
-
 
 # Function to Reset the seed, for determinsim in the computations *********************************************************************************************************
 
@@ -185,15 +185,13 @@ def objective(trial, site, seed, train_subset_combined, val_subset_combined):
     lr = trial.suggest_float("lr", 1e-5, 1e-3, log=True)
     w_decay = trial.suggest_float("w_decay", 1e-5, 1e-1, log=True)
     batch_size = trial.suggest_categorical("batch_size", [16, 32, 64])
-    # Suggest weights for the loss function
-    extreme_weights_ctt = trial.suggest_float("extreme_weights_ctt", 0.5, 2.0)
-    nonextreme_weight_ctt = trial.suggest_float("nonextreme_weight_ctt", 0.5, 10.0)
-    
-    print(f"Trial {trial.number} for site {site}: batch_size={batch_size}, lr={lr:.6f}, w_decay={w_decay:.6f}, extreme_weight={extreme_weights_ctt:.2f}")
+    minority_weight_multiplier = trial.suggest_float("minority_weight_multiplier", 0.1, 8.0)
+
+    # =================================================================================================
+    # Dataloaders setup
+    # =================================================================================
 
     reset_seeds(seed)
-
-    # 2. Setup Dataloaders
 
     g = torch.Generator()
     g.manual_seed(seed)
@@ -203,13 +201,15 @@ def objective(trial, site, seed, train_subset_combined, val_subset_combined):
         drop_last=False,
         shuffle=True,
         num_workers=4,
-        generator=g
+        generator=g,
+        pin_memory=True,  # Use pinned memory for faster data transfer to GPU
     )
     _DATALOADERS_VAL_CONF = dict(
         batch_size=batch_size, 
         drop_last=False,
         shuffle=False,
         num_workers=4,
+        pin_memory=True,  # Use pinned memory for faster data transfer to GPU
     )   
 
     reset_seeds(seed)
@@ -221,13 +221,17 @@ def objective(trial, site, seed, train_subset_combined, val_subset_combined):
     # =================================================================================
     # Class weights
     unique_classes, class_counts = np.unique(train_dataset.labels, return_counts=True)
-    class_weights = torch.tensor([1. / (nonextreme_weight_ctt * class_counts[0]), 1. / (extreme_weights_ctt * class_counts[1])], dtype=torch.float).to(device)
-    criterion = nn.CrossEntropyLoss(weight=class_weights)
+    base_minority_weight = class_counts[0] / class_counts[1]
+    final_minority_weight = base_minority_weight * minority_weight_multiplier
+    class_weights = torch.tensor([1.0, final_minority_weight], dtype=torch.float).to(device)
+    smoothed_weights = torch.sqrt(class_weights).to(device)
+
+    criterion = nn.CrossEntropyLoss(weight=smoothed_weights, reduction='mean').to(device)
 
     # Initialize models
     reset_seeds(seed)
-    nn_model = functions_NN_extremes.ToCombineExtremeClassifier(input_dim=len(train_dataset.all_features), train_alone_NN=False, num_classes=2).to(device)
-    cnn_model = convnext_functions.ConvNext(
+    NN_model = functions_NN_extremes.ToCombineExtremeClassifier(input_dim=len(train_dataset.all_features), train_alone_NN=False, num_classes=2).to(device)
+    CNN_model = convnext_functions.ConvNext(
         num_channels=len(train_features_era5.all_features),
         num_classes=2,
         patch_size=4,
@@ -237,10 +241,16 @@ def objective(trial, site, seed, train_subset_combined, val_subset_combined):
         train_alone=False
     ).to(device)
     
-    model = functions_NN_extremes.CombinedModel(nn_model, cnn_model, nn_hidden_dim=8, cnn_hidden_dim=16, output_dim=2).to(device)
+    model = functions_NN_extremes.CombinedModel(NN_model, CNN_model, nn_hidden_dim=8, cnn_hidden_dim=16, output_dim=2).to(device)
     
     # Optimizer
     optimizer_combined = optim.AdamW(model.parameters(), lr=lr, weight_decay=w_decay)
+
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer_combined, T_max=30) # 30 is num_epochs
+
+    # Mixing 32, 16 bit float for speed-up with scaler 
+    scaler = torch.cuda.amp.GradScaler()
+
 
     # 4. Train and Evaluate the model
     # =================================================================================
@@ -248,8 +258,10 @@ def objective(trial, site, seed, train_subset_combined, val_subset_combined):
     reset_seeds(seed)
     losses_train, losses_val, _ , best_val_loss = functions_NN_extremes.train_CombinedModel(
         model, combined_train_loader, combined_val_loader, criterion=criterion,
-        optimizer=optimizer_combined, num_epochs=HYPMS['epochs'], # Use a fixed large number of epochs
-        plot_loss=False, print_loss=False, early_stop=True, patience=5, print_early_stop=True, trial=trial
+        optimizer=optimizer_combined, num_epochs=30, # Use a fixed large number of epochs
+        plot_loss=False, print_loss=False, early_stop=True, patience=5, print_early_stop=True, trial=trial, 
+        scaler = scaler, scheduler=None
+
     )
 
     # Evaluate on the validation set to get the score for this trial
@@ -261,16 +273,16 @@ def objective(trial, site, seed, train_subset_combined, val_subset_combined):
     
     final_val_loss = best_val_loss # use the best val loos found before ealy stoping 
 
+
+    # =================================================================================
     # 5. Define and Return the Score to be Optimized
     # =================================================================================
     # We want to maximize both accuracies and minimize the loss.
-    # A good composite score could be the balanced accuracy, penalized by the loss.
-    #balanced_accuracy = (extreme_acc_val + nonextreme_acc_val) / 2.0
+
     balanced_accuracy = balanced_accuracy_score(y_true_val, y_pred_val)
+
+    score = balanced_accuracy - final_val_loss
     
-    # We subtract the loss because Optuna can only either maximize or minimize.
-    # By maximizing (balanced_accuracy - final_val_loss), we achieve both goals.
-    score = balanced_accuracy - final_val_loss + (0.1 * extreme_acc_val / 100) + (0.1 * nonextreme_acc_val / 100)
 
     return score
 
@@ -279,22 +291,36 @@ def objective(trial, site, seed, train_subset_combined, val_subset_combined):
 # EXECUTION BLOCK 
 #==========================================================================================================================================================
 
-sites = ['cordoba', 'stockholm', 'hannover', 'lyon', 'belgrado', 'marrakech']
-
-sites = ['cordoba']
+sites = ['cordoba', 'stockholm', 'hannover', 'lyon', 'belgrado']
 
 best_params_per_site = {}
 seed = list_seeds[0] # Using a single seed for the tuning process
 
+# Load the train features for ERA5, reducing time 
+
+train_features_era5 = functions_NN_extremes.ERA5Dataset_extremes(file_g500,file_g200,file_psl, **_ERA5_TRAIN_DATASET_CONF)
+
+# Start hyperparameter tuning for each site
+
 for site in sites:
 
-    # Prepare datasets 
-    file_local_scale = f"/gpfs/scratch/bsc32/bsc167965/tfm_data/era5_land/lagged_anomalies_and_event_detection/std_changed_{site}_lagged_standarized_anomalies_and_95p_extreme_detection.nc"
+    if spei_spi == 'spi':
+        files_spei =[f"/spi_data.nc"
+                    for scale_spei in scales_spei] # For testing with 1 month scale
+    elif spei_spi == 'spei':
+        files_spei = [f"/spei_data.nc"
+                        for scale_spei in scales_spei]
+
+    spei_spi_variable_mapping = {
+    'spei': [f'spei_hg_{scale_spei}' for scale_spei in scales_spei],
+    'spi': [f'spi_{scale_spei}' for scale_spei in scales_spei]
+    }
     
-    train_dataset = functions_NN_extremes.ERA5LandDataset_extremes_location_swvl_averaged_including_CO2(file_path=file_local_scale, file_CO2=file_CO2 ,**_ERA5LAND_TRAIN_DATASET_CONF)
-    train_features_era5 = functions_NN_extremes.ERA5Dataset_extremes(file_g500,file_g200,file_psl, **_ERA5_TRAIN_DATASET_CONF)
+    spei_variables = spei_spi_variable_mapping[spei_spi] # Variable name in the dataset for SPEI
+
+    train_dataset = ERA5LandDataset_extremes_location_spei(file_path=f"/gpfs/scratch/bsc32/bsc167965/tfm_data/era5_land/lagged_anomalies_and_event_detection/{percentile_to_load}_{site}_lagged_standarized_anomalies_and_extreme_detection.nc", file_CO2=file_CO2 , files_spei = files_spei, **_ERA5LAND_TRAIN_DATASET_CONF, spei_variables = spei_variables, num_lags=7)
     
-    combined_train_dataset = functions_NN_extremes.CombinedDataset(train_dataset, train_features_era5)
+    combined_train_dataset = functions_NN_extremes.CombinedDataset(train_dataset, train_features_era5,variables = ['g500', 'g200', 'psl'] )
     
     g = torch.Generator()
     g.manual_seed(seed)
@@ -311,7 +337,7 @@ for site in sites:
         direction="maximize",
         pruner=optuna.pruners.MedianPruner(n_warmup_steps=5)) # Maximize the score defined!
     study.optimize(lambda trial: objective(trial, site=site, seed=seed, 
-                    train_subset_combined=train_subset_combined , val_subset_combined= val_subset_combined), n_trials=20) # Run 20 trials
+                    train_subset_combined=train_subset_combined , val_subset_combined= val_subset_combined), n_trials=10) # Run n trials
 
     # Store the best parameters found for the site
     best_params = study.best_trial.params
@@ -329,13 +355,16 @@ for site in sites:
     results_content = f"Best hyperparameters for site: {site}\n"
     results_content += f"Best trial score: {best_trial.value:.4f}\n\n"
     for key, value in best_trial.params.items():
-        line = f"{key}: {value}\n"
+        if isinstance(value, (float, np.floating)):
+            line = f"{key}: {value:.6f}\n"
+        else:
+            line = f"{key}: {value}\n"
         print(f"    {line.strip()}")
         results_content += line
         
     # Save the best parameters to a text file
-    output_dir = "/home/bsc/bsc167965/TFM/ML/HYPM_tunning_outputs/"
-    file_path = os.path.join(output_dir, f"{site}_best_params_95p_with_testing_phase.txt")
+    output_dir = "/your/directory/to/save/the/results"
+    file_path = os.path.join(output_dir, f"file_name.txt")
     with open(file_path, 'w') as f:
         f.write(results_content)
 

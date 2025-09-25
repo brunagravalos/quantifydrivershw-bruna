@@ -1,0 +1,7 @@
+Best hyperparameters for site: hannover
+Best trial score: 0.3013
+
+lr: 0.000789
+w_decay: 0.037123
+batch_size: 16
+minority_weight_multiplier: 2.559150
