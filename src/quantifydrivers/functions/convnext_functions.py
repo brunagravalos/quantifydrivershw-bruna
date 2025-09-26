@@ -120,13 +120,11 @@ class ConvNextBlock(nn.Module):
 
         kernel_size = 7 
 
-        #current_padding = dilation * (kernel_size - 1) // 2 # formula for "same" padding, to mantain spatial dimensions
-
         self.block = nn.Sequential(*[
             nn.Conv2d(filter_dim,
                       filter_dim,
                       kernel_size=7,
-                      padding=3,       #current_padding, # 3 for original. Padding 3 chosen to mantain spatial dimensions after convolution
+                      padding=3,      
                       groups=filter_dim,
                       #dilation = dilation,
                       ),
@@ -146,7 +144,7 @@ class ConvNextBlock(nn.Module):
 
 class ConvNextLayer(nn.Module):
 
-    def __init__(self, filter_dim, depth, drop_rates): #, dilation=1, block_padding_mode='zeros'): #original does not have dilation or block_padding
+    def __init__(self, filter_dim, depth, drop_rates): 
         super().__init__()
         self.blocks = nn.ModuleList([])
 
