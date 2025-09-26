@@ -1,7 +1,30 @@
 
+# ==========================================================
+# IMPORT NEEDED PACKAGES
+# ==========================================================
+
 import numpy as np
 import time
 import math
+
+# ==========================================================
+
+# ==========================================================
+# This script implements LOESS (Locally Estimated Scatterplot Smoothing)
+# for smoothing time series and gridded climate data.
+#
+# Main functionalities:
+#   - loess_ts: Apply LOESS smoothing to a 1D time series.
+#   - loess_3d: Apply LOESS smoothing along the time dimension of 3D data (time, lat, lon).
+#   - tricubic: Weighting kernel used in LOESS regression.
+#   - Loess class: Core implementation of LOESS regression, including:
+#       * Normalization and denormalization of inputs
+#       * Selection of nearest neighbors for local fitting
+#       * Weighted regression for linear or polynomial fitting
+#
+# Dependencies: numpy, math, time
+# ==========================================================
+
 
 def loess_ts(ts,na_rm, window, degree):
     

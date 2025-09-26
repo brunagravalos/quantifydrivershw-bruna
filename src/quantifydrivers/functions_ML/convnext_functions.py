@@ -18,6 +18,26 @@ from torchvision.ops import stochastic_depth
 # ======================================================================================================
 
 
+# ======================================================================================================
+# This script implements a PyTorch version of the ConvNeXt architecture, 
+# adapted with padding layers to handle arbitrary input sizes.
+#
+# Main components:
+#   - PaddedStem: Initial patch embedding with padding support.
+#   - PaddedDownsample: Downsampling layer with padding for non-divisible inputs.
+#   - LayerNorm: Custom LayerNorm supporting both channels_first and channels_last formats.
+#   - Permute: Utility for permuting tensor dimensions inside blocks.
+#   - ConvNextBlock: Core ConvNeXt residual block with depthwise convolution, normalization, MLP, and scaling.
+#   - ConvNextLayer: Sequence of ConvNeXt blocks with optional stochastic depth regularization.
+#   - ConvNext: Full ConvNeXt model with configurable depths, dimensions, and classification head.
+#
+# Features:
+#   - Supports training as a classifier or as a feature extractor with spatial aggregation.
+#   - Deterministic computation enforced for reproducibility.
+#
+# Dependencies: torch, torchvision, numpy, random
+# ======================================================================================================
+
 class PaddedStem(nn.Module):
 
     ''' 

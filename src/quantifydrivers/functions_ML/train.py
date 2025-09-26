@@ -1,3 +1,7 @@
+# =============================================================================================================================
+# Train Models Functions ------------------------------------------------------------------------------------------------------
+# =============================================================================================================================
+    
 # ======================================================================================================
 # IMPORT NEEDED PACKAGES
 # ======================================================================================================
@@ -13,26 +17,33 @@ from torch.utils.data import DataLoader, TensorDataset
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import Dataset
-import functions_improve_CombinedModel
 import optuna 
 import random
 from tqdm import tqdm
 import torch.nn as nn                   
 import torch.nn.functional as F  
 
-seed = 42
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
-np.random.seed(seed)
-random.seed(seed)
-
 # ======================================================================================================
 
-
-# =============================================================================================================================
-# Train Models Functions ------------------------------------------------------------------------------------------------------
-# =============================================================================================================================
-    
+# ======================================================================================================
+# This script defines training functions for neural networks (NN), convolutional neural networks (CNN),
+# and combined NN+CNN models used in classification tasks (e.g., extreme event prediction).
+#
+# Main functionalities:
+#   - train_NNmodel: Train a standalone neural network classifier.
+#   - train_CNNmodel: Train a standalone convolutional neural network.
+#   - train_CombinedModel: Train a hybrid model that fuses NN and CNN outputs jointly.
+#
+# Features:
+#   - Supports GPU acceleration (CUDA).
+#   - Tracks training and validation loss, along with per-class accuracies.
+#   - Implements early stopping to prevent overfitting.
+#   - Optionally plots training/validation loss curves.
+#   - Integrates with Optuna for hyperparameter optimization (with pruning support).
+#
+# Dependencies: torch, numpy, scipy, xarray, pandas, matplotlib, sklearn, optuna, tqdm, random,
+#               functions_improve_CombinedModel
+# ======================================================================================================
 
 # For training the NN model alone
 

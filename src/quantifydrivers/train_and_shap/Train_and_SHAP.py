@@ -18,24 +18,22 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader, TensorDataset, random_split
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-import functions_NN_extremes
 import torch.nn as nn                   
 import torch.nn.functional as F       
-import functions_NN_extremes
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
 import re 
 import shap 
 from sklearn.metrics import balanced_accuracy_score
 import pickle
-import functions_improve_CombinedModel
-import convnext_functions
-import convnext_functions_modifications
-from further_functions_NN_extremes import ERA5LandDataset_extremes_location_spei
 import gc
 import tqdm
 import argparse
-from further_functions_NN_extremes import FocalLoss
+
+import functions_ML
+from functions_ML import convnext_functions
+from functions_ML import ERA5LandDataset_extremes_location_spei
+
 
 # ======================================================================================================
 
@@ -263,13 +261,13 @@ for site in sites:
     
     # Datasets ERA5land data --------------------------------------------------------------
     
-    train_dataset = functions_NN_extremes.ERA5LandDataset_extremes_location_swvl_averaged_including_CO2(file_path=file_local_scale, file_CO2=file_CO2 , **_ERA5LAND_TRAIN_DATASET_CONF)
-    test_dataset = functions_NN_extremes.ERA5LandDataset_extremes_location_swvl_averaged_including_CO2(file_path=file_local_scale, file_CO2=file_CO2 , **_ERA5LAND_TEST_DATASET_CONF)
+    train_dataset = functions_ML.ERA5LandDataset_extremes_location_swvl_averaged_including_CO2(file_path=file_local_scale, file_CO2=file_CO2 , **_ERA5LAND_TRAIN_DATASET_CONF)
+    test_dataset = functions_ML.ERA5LandDataset_extremes_location_swvl_averaged_including_CO2(file_path=file_local_scale, file_CO2=file_CO2 , **_ERA5LAND_TEST_DATASET_CONF)
     
     # Datasets ERA5 data ------------------------------------------------------------------
 
-    train_features_era5 = functions_NN_extremes.ERA5Dataset_extremes(file_g500,file_g200,file_psl, **_ERA5_TRAIN_DATASET_CONF) # shape: features, time, lat, lon 
-    test_features_era5 = functions_NN_extremes.ERA5Dataset_extremes(file_g500,file_g200,file_psl, **_ERA5_TEST_DATASET_CONF)
+    train_features_era5 = functions_ML.ERA5Dataset_extremes(file_g500,file_g200,file_psl, **_ERA5_TRAIN_DATASET_CONF) # shape: features, time, lat, lon 
+    test_features_era5 = functions_ML.ERA5Dataset_extremes(file_g500,file_g200,file_psl, **_ERA5_TEST_DATASET_CONF)
     
     # =========================================================================================
     # Dataloaders configuration dictionaries --------------------------------------------------
@@ -300,8 +298,8 @@ for site in sites:
     
     batch_size = _DATALOADERS_CONF['batch_size'] # batch size for dataloaders both datasets
     
-    combined_train_dataset  = functions_NN_extremes.CombinedDataset(train_dataset,train_features_era5, variables=variables_era5)
-    combined_test_dataset = functions_NN_extremes.CombinedDataset(test_dataset,test_features_era5, variables=variables_era5)
+    combined_train_dataset  = functions_ML.CombinedDataset(train_dataset,train_features_era5, variables=variables_era5)
+    combined_test_dataset = functions_ML.CombinedDataset(test_dataset,test_features_era5, variables=variables_era5)
     
     # Split train and validation sets for the combined dataset ------------------------------------------------
     train_size_combined = int(0.8 * len(combined_train_dataset))
@@ -343,7 +341,7 @@ for site in sites:
     
     reset_seeds(seed)
     # MLP for local-scale
-    NN_model = functions_NN_extremes.ToCombineExtremeClassifier(input_dim=len(train_dataset.all_features), train_alone_NN=False, num_classes=2).to(device)
+    NN_model = functions_ML.ToCombineExtremeClassifier(input_dim=len(train_dataset.all_features), train_alone_NN=False, num_classes=2).to(device)
     reset_seeds(seed)
     # ConvNext for large-scale
     CNN_model_loaded = convnext_functions.ConvNext(
@@ -358,7 +356,7 @@ for site in sites:
     reset_seeds(seed)
     
     # Combined model    
-    model = functions_NN_extremes.CombinedModel(NN_model, CNN_model_loaded, nn_hidden_dim=8, cnn_hidden_dim=16,output_dim=2).to(device)
+    model = functions_ML.CombinedModel(NN_model, CNN_model_loaded, nn_hidden_dim=8, cnn_hidden_dim=16,output_dim=2).to(device)
     reset_seeds(seed)
     
     # =======================================================================================================================================
@@ -373,7 +371,7 @@ for site in sites:
 
     # Start training
     print( " Training combined model " )
-    losses_train_combined, losses_val_combined, num_e, best_val_loss = functions_NN_extremes.train_CombinedModel(model,combined_train_loader, combined_val_loader, criterion=criterion,
+    losses_train_combined, losses_val_combined, num_e, best_val_loss = functions_ML.train_CombinedModel(model,combined_train_loader, combined_val_loader, criterion=criterion,
                                                                                                                optimizer=optimizer_combined,num_epochs=HYPMS['epochs'],
                                                                                                                plot_loss=False,print_loss=False, early_stop=True, patience=5,
                                                                                                                print_early_stop=False,trial=None,scaler=None,scheduler=None)
@@ -386,7 +384,7 @@ for site in sites:
     # =======================================================================================================================================
 
     reset_seeds(seed)
-    y_true, y_pred, outputs_prob,extreme_acc, nonextreme_acc = functions_NN_extremes.evaluate_CombinedModel(CombinedModel=model,cnn=cnn_model_loaded,nn=nn_model_loaded, test_loader=combined_test_loader, print_accuracies=True,train_alone=False)
+    y_true, y_pred, outputs_prob,extreme_acc, nonextreme_acc = functions_ML.evaluate_CombinedModel(CombinedModel=model,cnn=cnn_model_loaded,nn=nn_model_loaded, test_loader=combined_test_loader, print_accuracies=True,train_alone=False)
     reset_seeds(seed)
     
     # Save the dictionaries with the relevant data ---------------------------------------------------------------------
@@ -413,7 +411,7 @@ for site in sites:
     # =======================================================================================================================================
     
     # Prepare NN model and CNN model for SHAP -----------------------------------------------------------------------------------------------
-    NN_model_loaded = functions_NN_extremes.ToCombineExtremeClassifier(input_dim=len(train_dataset.all_features), train_alone_NN=False, num_classes=2).to(device)
+    NN_model_loaded = functions_ML.ToCombineExtremeClassifier(input_dim=len(train_dataset.all_features), train_alone_NN=False, num_classes=2).to(device)
     NN_model_loaded.eval()
     reset_seeds(seed)
     CNN_model_loaded = convnext_functions.ConvNext(
@@ -428,7 +426,7 @@ for site in sites:
     reset_seeds(seed)
     
     # Create the Combined model for SHAP---------------------------------------------------------------------------------------------------
-    model = functions_NN_extremes.CombinedModel(NN_model_loaded, CNN_model_loaded, nn_hidden_dim=8, cnn_hidden_dim=16,output_dim=2).to(device)
+    model = functions_ML.CombinedModel(NN_model_loaded, CNN_model_loaded, nn_hidden_dim=8, cnn_hidden_dim=16,output_dim=2).to(device)
     reset_seeds(seed)
     # Load the trained CombinedModel weights ----------------------------------------------------------------------------------------------
     model_state_dict = torch.load("/your/path/to/save/weights/model/file_name.pth")

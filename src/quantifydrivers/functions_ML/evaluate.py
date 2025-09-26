@@ -1,3 +1,7 @@
+# ====================================================================================================================================================
+# Functions to evaluate the model --------------------------------------------------------------------------------------------------------------------
+# ====================================================================================================================================================
+        
 # ======================================================================================================
 # IMPORT NEEDED PACKAGES
 # ======================================================================================================
@@ -13,27 +17,35 @@ from torch.utils.data import DataLoader, TensorDataset
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import Dataset
-import functions_improve_CombinedModel
 import optuna 
 import random
 from tqdm import tqdm
 import torch.nn as nn                   
 import torch.nn.functional as F  
 
-seed = 42
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
-np.random.seed(seed)
-random.seed(seed)
-    
+# ======================================================================================================
+
+# ======================================================================================================
+# This script provides evaluation utilities for neural network (NN), convolutional neural network (CNN),
+# and combined NN+CNN models in binary classification tasks (e.g., extreme vs. non-extreme events).
+#
+# Main functionalities:
+#   - evaluate_model: Evaluate a standalone model on test data with class-specific accuracies.
+#   - gather_ensamble_probabilities: Collect predicted probabilities from an ensemble of models.
+#   - evaluate_ensamble: Assess ensemble performance using precomputed probabilities.
+#   - evaluate_CombinedModel: Evaluate combined NN+CNN models, optionally returning individual model outputs.
+#
+# Features:
+#   - Computes both overall and per-class accuracies (extreme / non-extreme).
+#   - Returns true labels, predictions, and class probabilities.
+#   - Supports evaluation of ensembles and models trained independently.
+#   - GPU acceleration (CUDA) supported.
+#
+# Dependencies: torch, numpy, scipy, xarray, pandas, matplotlib, sklearn, optuna, tqdm, random,
+#               functions_improve_CombinedModel
 # ======================================================================================================
 
 
-
-# ====================================================================================================================================================
-# Functions to evaluate the model --------------------------------------------------------------------------------------------------------------------
-# ====================================================================================================================================================
-        
 def evaluate_model(model, testloader):
 
     ''' Function to evaluate the model on the test data.

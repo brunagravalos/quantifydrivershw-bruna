@@ -3,6 +3,51 @@
 # Custom Datasets -------------------------------------------------------------------------------------------------------------
 # =============================================================================================================================
 
+# =============================================================================================================================
+# Import necessary libraries
+# =============================================================================================================================
+
+import torch
+import scipy 
+import xarray as xr
+import numpy as np 
+import pandas as pd 
+import matplotlib.pyplot as plt 
+import torch.optim as optim
+from torch.utils.data import DataLoader, TensorDataset
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from torch.utils.data import Dataset
+import optuna 
+import random
+from tqdm import tqdm
+import torch.nn as nn                   
+import torch.nn.functional as F  
+
+# =============================================================================================================================
+# This script defines custom PyTorch Dataset classes for handling ERA5 and ERA5-Land climate data,
+# tailored for extreme event prediction tasks.
+#
+# Main classes:
+#   - CombinedDataset: Combines local-scale and large-scale datasets while ensuring temporal coherence.
+#   - ERA5Dataset_extremes: Loads large-scale ERA5 predictors (g500, g200, psl) with lagged anomalies.
+#   - Dataset_count_observational_TX: Handles observational ERA5-Land data (single point) with extremes.
+#   - ERA5LandDataset_extremes_location_swvl_averaged_including_CO2: Uses averaged soil moisture anomalies
+#       and CO2 concentration as predictors for extreme classification.
+#   - ERA5LandDataset_extremes_location_spei: Combines CO2 concentration and drought indices (SPEI/SPI)
+#       as predictors for extreme classification.
+#
+# Features:
+#   - Supports lagged variables for temporal dependencies.
+#   - Integrates CO2 and drought indicators as additional predictors.
+#   - Handles temporal filtering by date and month.
+#   - Removes NaN samples for clean training input.
+#   - Returns tensors compatible with PyTorch DataLoader.
+#
+# Dependencies: torch, numpy, xarray
+# =============================================================================================================================
+
+
 # Combined local-scale and large-scale dataset --------------------------------------------------------------------------------
 
 class CombinedDataset(torch.utils.data.Dataset):

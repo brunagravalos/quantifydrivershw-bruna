@@ -18,24 +18,22 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader, TensorDataset, random_split
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-import functions_NN_extremes
 import torch.nn as nn                 
 import torch.nn.functional as F        
-import functions_NN_extremes
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
 import re 
 import shap 
 from sklearn.metrics import balanced_accuracy_score
 import pickle
-import functions_improve_CombinedModel
-import convnext_functions
-import modified_convnext_functions
 import optuna
 from sklearn.metrics import f1_score
 import gc
 import tqdm
 import argparse
+
+import functions_ML
+import convnext_functions
 
 # ======================================================================================================
 
@@ -239,7 +237,7 @@ def objective(trial, site, seed, train_subset_combined, val_subset_combined):
 
     # Initialize models
     reset_seeds(seed)
-    NN_model = functions_NN_extremes.ToCombineExtremeClassifier(input_dim=len(train_dataset.all_features), train_alone_NN=False, num_classes=2).to(device)
+    NN_model = functions_ML.ToCombineExtremeClassifier(input_dim=len(train_dataset.all_features), train_alone_NN=False, num_classes=2).to(device)
     CNN_model = convnext_functions.ConvNext(
         num_channels=len(train_features_era5.all_features),
         num_classes=2,
@@ -250,7 +248,7 @@ def objective(trial, site, seed, train_subset_combined, val_subset_combined):
         train_alone=False
     ).to(device)
     
-    model = functions_NN_extremes.CombinedModel(NN_model, CNN_model, nn_hidden_dim=8, cnn_hidden_dim=16, output_dim=2).to(device)
+    model = functions_ML.CombinedModel(NN_model, CNN_model, nn_hidden_dim=8, cnn_hidden_dim=16, output_dim=2).to(device)
     
     # Optimizer
     optimizer_combined = optim.AdamW(model.parameters(), lr=lr, weight_decay=w_decay)
@@ -264,7 +262,7 @@ def objective(trial, site, seed, train_subset_combined, val_subset_combined):
     # =================================================================================
     print("Training combined model...")
     reset_seeds(seed)
-    losses_train, losses_val, _ , best_val_loss = functions_NN_extremes.train_CombinedModel(
+    losses_train, losses_val, _ , best_val_loss = functions_ML.train_CombinedModel(
         model, combined_train_loader, combined_val_loader, criterion=criterion,
         optimizer=optimizer_combined, num_epochs=50, # Use a fixed large number of epochs
         plot_loss=False, print_loss=False, early_stop=True, patience=5, print_early_stop=True, trial=trial, 
@@ -273,7 +271,7 @@ def objective(trial, site, seed, train_subset_combined, val_subset_combined):
     )
 
     # Evaluate on the validation set to get the score for this trial
-    y_true_val, y_pred_val, _, extreme_acc_val, nonextreme_acc_val = functions_NN_extremes.evaluate_CombinedModel(
+    y_true_val, y_pred_val, _, extreme_acc_val, nonextreme_acc_val = functions_ML.evaluate_CombinedModel(
         CombinedModel=model, cnn=cnn_model, nn=nn_model,
         test_loader=combined_val_loader, # <-- IMPORTANT: Use validation loader
         print_accuracies=False, train_alone=False
@@ -303,15 +301,15 @@ seed = list_seeds[0] # Using a single seed for the tuning process
 
 # Load the train features for ERA5, reducing time 
 
-train_features_era5 = functions_NN_extremes.ERA5Dataset_extremes(file_g500,file_g200,file_psl, **_ERA5_TRAIN_DATASET_CONF)
+train_features_era5 = functions_ML.ERA5Dataset_extremes(file_g500,file_g200,file_psl, **_ERA5_TRAIN_DATASET_CONF)
 
 # Start hyperparameter tuning for each site -----------------------------------------------------------------------------------
 
 for site in sites:
 
     # Prepare datasets     
-    train_dataset = functions_NN_extremes.ERA5LandDataset_extremes_location_swvl_averaged_including_CO2(file_path=file_local_scale, file_CO2=file_CO2 ,**_ERA5LAND_TRAIN_DATASET_CONF)
-    combined_train_dataset = functions_NN_extremes.CombinedDataset(train_dataset, train_features_era5,variables=variables_era5)
+    train_dataset = functions_ML.ERA5LandDataset_extremes_location_swvl_averaged_including_CO2(file_path=file_local_scale, file_CO2=file_CO2 ,**_ERA5LAND_TRAIN_DATASET_CONF)
+    combined_train_dataset = functions_ML.CombinedDataset(train_dataset, train_features_era5,variables=variables_era5)
     
     g = torch.Generator()
     g.manual_seed(seed)

@@ -1,3 +1,8 @@
+
+# =========================================================================================
+# IMPORT NEEDED PACKAGES
+# ========================================================================================
+
 import numpy as np
 from matplotlib import pyplot as plt
 from netCDF4 import Dataset as ncread
@@ -12,13 +17,43 @@ import cartopy.mpl.ticker as cticker
 import os
 import xesmf as xe#for regridding 
 
+# =========================================================================================
+
+
+# =========================================================================================
+# This script provides utilities for preparing climate datasets for machine learning 
+# and spatial analysis.
+#
+# Main functionalities:
+#   - Create lagged features:
+#       * create_lagged_features_single: Generate lagged anomalies for a single variable.
+#       * create_lagged_features_multiple: Generate lagged versions for multiple variables 
+#         using a lag dictionary.
+#   - Regridding:
+#       * regridded_dataset: Regrid data to a 1°x1° grid using bilinear interpolation (via xesmf).
+#
+# Typical use cases:
+#   - Preparing ERA5 or climate reanalysis datasets for training artificial neural networks (ANNs).
+#   - Standardizing spatial resolution across datasets.
+#
+# Dependencies: numpy, xarray, pandas, matplotlib, cartopy, netCDF4, scipy, xesmf, os, datetime
+# =========================================================================================
+
 
 # Lagged-data creation ------------------------------------------------------------------------------------------------------
 
-#for a single variable 
-
 def create_lagged_features_single(dataset, var, lags, new_prefix):
-    """Create lagged time series for a variable."""
+
+    """Create lagged time series for a variable.
+    In:
+    dataset (xarray): Input dataset containing the variable.
+    var (str): Name of the variable to create lags for.
+    lags (list): List of integers representing the lag steps (e.g., [1,2,3,4,5,6,7]).
+    new_prefix (str): Prefix to add to the lagged variable names (e.g., 'era5_land_').
+    Out:
+    dataset: Dataset with original variable + lagged variables.
+    """
+
     lags = sorted(lags, reverse=True)
     new_vars = {}
     
@@ -37,7 +72,7 @@ def create_lagged_features_single(dataset, var, lags, new_prefix):
     return xr.Dataset(new_vars, attrs=dataset.attrs)
 
 
-#For multiple variables 
+#For multiple variables -------------------------------------------------------------------------------------------------------
 
 def create_lagged_features_multiple(dataset, variables, lag_dict, new_prefix):
     """
@@ -76,9 +111,22 @@ def create_lagged_features_multiple(dataset, variables, lag_dict, new_prefix):
 # -------------------------------------------------------------------------------------------------------------------------------------------
 
 
-#Regridder for ERA5 data 
+#Regridder for ERA5 data -------------------------------------------------------------------------------------------------
 
 def regridded_dataset(ds,variable):
+
+    """ 
+    Regrid an xarray Dataset to a 1°x1° grid using bilinear interpolation.
+    In:
+        ds (xarray.Dataset): Input dataset with 'lat' and 'lon' coordinates.
+        variable (str): Name of the variable to regrid.
+    Out:
+        ds_regridded (xarray.Dataset): Regridded dataset with 1°x1° resolution.
+    Notes:
+        - Requires xesmf package for regridding.
+        - Preserves global and variable attributes.
+        """
+
     # Extract the latitude and longitude bounds from the dataset
     lat_min, lat_max = ds.lat.min().item(), ds.lat.max().item()
     lon_min, lon_max = ds.lon.min().item(), ds.lon.max().item()
@@ -105,6 +153,7 @@ def regridded_dataset(ds,variable):
 
     return ds_regridded
 
+# ====================================================================================================================
 
 
 

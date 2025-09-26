@@ -13,7 +13,6 @@ from torch.utils.data import DataLoader, TensorDataset
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import Dataset
-import functions_improve_CombinedModel
 import optuna 
 import random
 from tqdm import tqdm

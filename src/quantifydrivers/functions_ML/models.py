@@ -3,6 +3,50 @@
 # Model classes -----------------------------------------------------------------------------------------------------------------------------------
 # =================================================================================================================================================
 
+
+# ======================================================================================================
+# IMPORT NEEDED PACKAGES
+# ======================================================================================================
+
+import torch
+import scipy 
+import xarray as xr
+import numpy as np 
+import pandas as pd 
+import matplotlib.pyplot as plt 
+import torch.optim as optim
+from torch.utils.data import DataLoader, TensorDataset
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from torch.utils.data import Dataset
+import optuna 
+import random
+from tqdm import tqdm
+import torch.nn as nn                   
+import torch.nn.functional as F  
+    
+# ======================================================================================================
+
+# =================================================================================================================================================
+# This script defines neural network models for classifying extreme events 
+# and combining multiple data modalities (e.g., tabular + spatial features).
+#
+# Main components:
+#   - ExtremeClassifier: A simple feedforward neural network for binary classification.
+#   - ToCombineExtremeClassifier: An MLP that can work standalone as a classifier 
+#     or provide hidden features for combination with a CNN.
+#   - CombinedModel: A hybrid model that fuses features from both a neural network 
+#     and a CNN through fully connected layers for joint classification.
+#
+# Features:
+#   - Handles both NumPy arrays and PyTorch tensors as inputs.
+#   - Configurable standalone or combined training modes.
+#   - Modular structure for flexible experimentation with NN + CNN combinations.
+#
+# Dependencies: torch, numpy, xarray, pandas, matplotlib, sklearn, optuna, tqdm, random,
+#               functions_improve_CombinedModel
+# =================================================================================================================================================
+
 # Simple Neural Network class ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 class ExtremeClassifier(nn.Module):                        

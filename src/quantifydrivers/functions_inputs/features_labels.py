@@ -1,3 +1,8 @@
+
+# =========================================================================================================================
+# IMPORT NEEDED PACKAGES
+# =========================================================================================================================
+
 import numpy as np
 from matplotlib import pyplot as plt
 from netCDF4 import Dataset as ncread
@@ -10,11 +15,23 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import cartopy.mpl.ticker as cticker
 import os
-#import script with loess fucntions 
-import loess_functions
+from functions_inputs import loess_functions
 
+# ========================================================================================================================
 
-#Function for only computing the cliamtology 
+# =========================================================================================================================
+# This script provides a set of functions to compute climate-related indices and detect extreme heatwave events.
+# 
+# Main functionalities:
+#   - Compute climatologies (raw, moving-window, and LOESS-smoothed).
+#   - Calculate percentiles, anomalies, and standardized anomalies.
+#   - Detect heatwave events using percentile-based thresholds.
+#   - Compute heatwave metrics such as frequency, duration, intensity, and cumulative measures.
+#
+# Dependencies: numpy, xarray, pandas, matplotlib, cartopy, scipy, netCDF4, and custom loess_functions.
+# =========================================================================================================================
+
+#Function for only computing the cliamtology -----------------------------------------------------------------------------
 
 def Compute_climatology(dataset,variable,window,date1,date2):
 
@@ -38,16 +55,15 @@ def Compute_climatology(dataset,variable,window,date1,date2):
 
     # ---------------------------------------
 
-    #window series and climatology of window series 
-
     window_series = dataset[variable].rolling(time=window,center=True,min_periods=1).mean(skipna=True) #compute window means #window series
     clim_window = window_series.groupby('time.dayofyear').mean('time') #climatology of windows #climatology of window series
 
     return climatology,clim_window, window_series, loess_climatology
 
+# ------------------------------------------------------------------------------------------------------------------------------
+
 
 #Function for computing climatology and smothed percentile using a m-day window. 
-#The ouptu percentile-n is given so that also the raw computed percentile can be used and, for example, a LOESS fit smoothing can be applied to it. 
 
 def Compute_window_percentile_reference_period(dataset,variable,quantile_value,window,date1,date2):
     '''climatology: computed by single days 
@@ -68,8 +84,6 @@ def Compute_window_percentile_reference_period(dataset,variable,quantile_value,w
         kwargs={"na_rm": True, "window": 30, "degree": 1}  # Extra arguments for loess_ts
     )
 
-    # ---------------------------------------
-
 
     #percentile computation 
     ds_rolling = ds[variable].rolling(time=5,center=True).construct("window")
@@ -83,8 +97,9 @@ def Compute_window_percentile_reference_period(dataset,variable,quantile_value,w
 
     return climatology,percentile,clim_window, window_series, loess_climatology
 
+# ------------------------------------------------------------------------------------------------------------------------------
 
-#function for standarized anomalies. Two options, raw or window smoothing
+#Function for standarized anomalies. Two options, raw or window smoothing
 
 def Compute_anomalies(dataset, variable, date1, date2):
     """
@@ -178,15 +193,13 @@ def compute_standardized_anomalies(dataset, variable, ref_period_start, ref_peri
     ref_ds = dataset.sel(time=slice(ref_period_start, ref_period_end))
 
     # 2. Compute daily climatology and standard deviation over the reference period.
-    #    We use .compute() here because the resulting arrays (365 days x lat x lon)
-    #    are small enough to fit in memory, which simplifies the LOESS smoothing step.
+  
     print("Computing daily statistics for reference period...")
     climatology_mean = ref_ds[variable].groupby('time.dayofyear').mean('time').compute()
     climatology_std = ref_ds[variable].groupby('time.dayofyear').std('time').compute()
     print("Daily statistics computed.")
 
     # 3. Apply LOESS smoothing to the computed daily statistics.
-    #    This smooths out noise in the daily mean and std dev.
     print("Applying LOESS smoothing...")
     kwargs = {"na_rm": True, "window": 30, "degree": 1}
     
@@ -213,10 +226,6 @@ def compute_standardized_anomalies(dataset, variable, ref_period_start, ref_peri
 
 
     # 4. Calculate anomalies and standardize them.
-    #    Because `dataset` is a Dask array, these operations are LAZY.
-    #    They build a task graph instead of computing results in memory.
-    #    Xarray automatically handles broadcasting the smaller `loess` arrays
-    #    over the large, chunked `dataset` array.
     print("Building final computation graph for standardization...")
     
     # Group the full dataset by dayofyear to align with the climatology
@@ -227,9 +236,6 @@ def compute_standardized_anomalies(dataset, variable, ref_period_start, ref_peri
     standardized_anomalies = anomalies / loess_std
 
     return standardized_anomalies
-
-    
-    
 
 
 # --------------------- HW detection ------------------------------------------------------------------------------------------------------------------
@@ -261,7 +267,6 @@ def detect_HW(dataset,variable,percentile,duration,site):
     DateTime_time = np.array([pd.to_datetime(ts.item()) for ts in time.values]) # Convert to datetime format
     
     variable_data = dataset[variable] #T max values 
-    #threshold_exceed = np.zeros_like(tasmax, dtype=bool)   # Array to store when the threshold is exceeded
     HW_mask = np.zeros_like(variable_data, dtype=bool)   
     variable_data_diff = np.zeros_like(variable_data) # To store the difference between temperatures and the 90th percentile, used later for intensity calculations.
 
@@ -290,18 +295,11 @@ def detect_HW(dataset,variable,percentile,duration,site):
 
     # --------------- Dates of HW events -------------------------------------------------------------------------------------------------------------
 
-
     # Configuration of the time variable to facilitate data analysis. Basically, we index the dates.
 
-    # ------------- Complete period ---------------------------------
-
-    #Configuration of time variable 
-    
     time = dataset.time # Time variable from our xarray
     DateTime_time = np.array([pd.to_datetime(ts.item()) for ts in time.values]) # Convert to datetime format
     #Write heatwave event dates 
-
-    
 
     # Find the start and end indices of consecutive True values in HW_mask
     hw_changes = np.diff(HW_mask.astype(int))  # Detect changes in HW_mask
@@ -333,9 +331,8 @@ def detect_HW(dataset,variable,percentile,duration,site):
     #returns DateTime to use in the metrics functions 
     return HW_mask,HW_intensity,DateTime_time
 
-#To do: Create function that computes the HW metrics for a given HW_mask array. Save metrics in a csv file for each of the studied locations.
 
-#def Compute_HW_metrics()
+# --------------------- Compute metrics of detected events --------------------------------------------------------------------------------------------
 
 
 def Compute_metrics(HW_mask,HW_intensity,DateTime_time):
@@ -352,19 +349,11 @@ def Compute_metrics(HW_mask,HW_intensity,DateTime_time):
     # Detect the number of events in the mask array.
     labeled, num_features = label(HW_mask) # HW_mask marks all values with True and False depending on whether the point (time, lat, lon) belongs to a detected heatwave.
     #This labeled creates events of various True values together in time. 
-    #marks every day with True value with a unique integer. 
     
     # Arrays to store metrics
     duration = np.zeros((HW_mask.shape[0])) # Array to store the duration of events
-    #frequency = np.zeros((HW_mask.shape[1], HW_mask.shape[2])) # Contains the number of events for each point (lat, lon), the frequency
-    #max_intensity = np.zeros((HW_mask.shape[1], HW_mask.shape[2])) # Maximum intensity of an event at each grid point
-    #mean_intensity = np.zeros((HW_mask.shape[1], HW_mask.shape[2])) # Average intensity of events at the grid point
     cumulative_intensity = np.zeros((HW_mask.shape[0])) # Cumulative intensity of different events
-    
-    # Loop through all grid points
-    #for lat in range(HW_mask.shape[1]):  # Loop over latitude
-     #   for lon in range(HW_mask.shape[2]):  # Loop over longitude
-    # Time series for the grid point 
+  
     gridpoint_labels = labeled[:]
     
     # Extract labels (events) of different features (consecutive True values along the time dimension)
@@ -376,7 +365,6 @@ def Compute_metrics(HW_mask,HW_intensity,DateTime_time):
     mask_1950_2000 = (DateTime_time >= pd.Timestamp("1950-01-01")) & (DateTime_time <= pd.Timestamp("2000-12-31"))
     mask_1971_2000 = (DateTime_time >= pd.Timestamp("1971-01-01")) & (DateTime_time <= pd.Timestamp("2000-12-31"))
     mask_2001_2024 = (DateTime_time >= pd.Timestamp("2001-01-01")) & (DateTime_time <= pd.Timestamp("2024-12-31"))
-    
     
     # Initialize frequency counters for the selected periods 
     frequency_1950_2000 = 0
@@ -409,7 +397,6 @@ def Compute_metrics(HW_mask,HW_intensity,DateTime_time):
         # Update metric arrays 
     
         duration[event_mask] = progressive_counter  # Event duration at the grid point, adding 1 for each day the event occurs
-        # If the event appears in 3 time points at the grid point, they are marked as 1, 2, 3. Therefore, HW_0_1the event duration is 3 days.
         cumulative_intensity[event_mask] = event_cumulative  # Cumulative intensity for this event
         max_intensity = event_intensity.max() # Update maximum intensity for this grid point
         mean_intensity = event_intensity.mean()  # Add to mean intensity (later divided by the number of events)
@@ -419,9 +406,6 @@ def Compute_metrics(HW_mask,HW_intensity,DateTime_time):
         event_dates = DateTime_time[event_mask]  # Extract corresponding dates
     
         # Count event frequency for each period. 
-        # We are adding 1 because the frequency is for events of HW, not all days surpassing the 90th percentile. 
-        # This is to track how many HW events we have. 
-        # The percentage computed below is for all the days surpassing the 90th percentile, and should give 10% of extreme days and 90% of normal days aprox.
         if np.any(mask_1950_2000 & event_mask):
             frequency_1950_2000 += 1
         if np.any(mask_1971_2000 & event_mask):
@@ -432,9 +416,7 @@ def Compute_metrics(HW_mask,HW_intensity,DateTime_time):
         #Extreme and normal days counting
         # Count heatwave (True) and normal (False) days for each period
         period_counts["1950-2000"]["HW_days"] += np.sum(event_mask & mask_1950_2000)  # Heatwave days in 1950-2000
-
         period_counts["1971-2000"]["HW_days"] += np.sum(event_mask & mask_1971_2000)  # Heatwave days in 1971-2000
-        
         period_counts["2001-2024"]["HW_days"] += np.sum(event_mask & mask_2001_2024)  # Heatwave days in 2001-2024
         
 
@@ -452,9 +434,6 @@ def Compute_metrics(HW_mask,HW_intensity,DateTime_time):
         for period in period_counts
     }
 
-    print(period_counts)
-    print(period_percentages)
-
     
     # Divide mean intensity by the number of events 
     if len(events) > 0:
@@ -469,8 +448,6 @@ def Compute_metrics(HW_mask,HW_intensity,DateTime_time):
     print(frequencies_selected_periods)
 
     return duration,frequency,frequencies_selected_periods,max_intensity,mean_intensity,cumulative_intensity,period_percentages,period_counts
-
-    
 
 
 #------------------------------------------------------------------------------------------------------------------------------------
