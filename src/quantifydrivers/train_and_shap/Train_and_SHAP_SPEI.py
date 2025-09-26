@@ -207,15 +207,15 @@ for site in sites:
             
     #File paths ERA5 data --------------------------------------------------------------------------------------
             
-    file_g500 = "/path/to/your/data/g500_1x1_lagged_standarized_anomalies.nc"
-    file_g200 = "/path/to/your/data/g200_1x1_lagged_standarized_anomalies.nc"
-    file_psl = "/path/to/your/data/psl_1x1_lagged_standarized_anomalies.nc"
+    file_g500 = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/std_changed_g500_1x1_lagged_standarized_anomalies.nc"
+    file_g200 = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/std_changed_g200_1x1_lagged_standarized_anomalies.nc"
+    file_psl = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/std_changed_psl_1x1_lagged_standarized_anomalies.nc"
 
     # File local scale data and extreme classification ------------------------------------------------
-    file_local_scale = "/path/to/your/data/lagged_standarized_anomalies_and_extreme_detection.nc"
+    file_local_scale = f"/gpfs/scratch/bsc32/bsc167965/tfm_data/era5_land/lagged_anomalies_and_event_detection/{percentile_to_load}_{site}_lagged_standarized_anomalies_and_extreme_detection.nc"
     
     # File CO2 data --------------------------------------------------------------------------------------
-    file_CO2 = "/path/to/your/data/CO_data.nc"
+    file_CO2 = "/home/bsc/bsc167965/TFM/ML/data_files/daily_co2_JJA.nc"
 
     if spei_spi == 'spi':
         files_spei =[f"/path/to/data/spi_data.nc"
@@ -436,9 +436,9 @@ for site in sites:
     
     main_path = '/your/path/to/save/results'  # Change to your desired path
     
-    with open(os.path.join(main_path, f'{site}/1lag_{distribution}_daily_{spei_spi}_{percentile_to_load}_results_data_{seed}.pkl'), 'wb') as f:
-        pickle.dump(seed_results, f)
-        print(f"saved file results {seed}")
+    #with open(os.path.join(main_path, f'{site}/1lag_{distribution}_daily_{spei_spi}_{percentile_to_load}_results_data_{seed}.pkl'), 'wb') as f:
+    #    pickle.dump(seed_results, f)
+    #    print(f"saved file results {seed}")
     
     print("Finished training model, computing SHAP")
     
@@ -526,8 +526,8 @@ for site in sites:
         'cnn': shap_values_cnn_raw,
     }
     
-    with open(f'/your/path/to/save/SHAP/results', 'wb') as f:
-        pickle.dump(raw_shap_dict, f)
+    #with open(f'/your/path/to/save/SHAP/results', 'wb') as f:
+    #    pickle.dump(raw_shap_dict, f)
     
     print(f"Finished training and SHAP value computing for site: {site}")
     

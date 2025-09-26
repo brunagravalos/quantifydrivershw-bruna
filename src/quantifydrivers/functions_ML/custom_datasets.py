@@ -86,7 +86,7 @@ class CombinedDataset(torch.utils.data.Dataset):
 # Large-Scale dataset -------------------------------------------------------------------------------------------------
 
 class ERA5Dataset_extremes(Dataset):
-    def __init__(self, file_g500,file_g200,file_psl, start_date, end_date, months, start_lag, lags_era5,transform=None):
+    def __init__(self, file_g500, file_g200, file_psl, start_date, end_date, months, start_lag, lags_era5, variables, transform=None):
         """
         Args:
             file_g500 (str): Path to the NetCDF file for g500 EOFs.
@@ -97,50 +97,60 @@ class ERA5Dataset_extremes(Dataset):
             start_lag (int) : 1 for the lag 1. 
             lags_era5 (int) : number of lags to take in the dataset
             months (list of int): List of months to filter.
-            scaler (sklearn.preprocessing.StandardScaler, optional): Pre-fitted scaler for standardization.
+            variables (list of str): Variables to use (subset of ['g500','g200','psl']).
             transform (callable, optional): Optional transform to be applied.
         """
 
-        # Select time period and months 
-        self.ds_g500 = xr.open_dataset(file_g500).sel(time=slice(start_date, end_date)).sel(lon=slice(-54,69))
-        self.ds_g500 = self.ds_g500.sel(time=self.ds_g500.time.dt.month.isin(months), drop=True)
-        
-        self.ds_g200 = xr.open_dataset(file_g200).sel(time=slice(start_date, end_date)).sel(lon=slice(-54,69))
-        self.ds_g200 = self.ds_g200.sel(time=self.ds_g200.time.dt.month.isin(months), drop=True)
-        self.ds_g200 = self.ds_g200.squeeze('plev', drop=True) #remove plev dimension
-        
-        self.ds_psl = xr.open_dataset(file_psl).sel(time=slice(start_date, end_date)).sel(lon=slice(-54,69))
-        self.ds_psl = self.ds_psl.sel(time=self.ds_psl.time.dt.month.isin(months), drop=True)
+        self.variables = variables  # Store selected variables
 
-        # Identify lagged variables if not provided
+        # Prepare a dict to hold datasets and features
+        datasets = {}
+        lagged_vars_dict = {}
 
-        self.lagged_vars = {
-            'g500': [f'lagged_era5g500_anomalies_lag{lag}' for lag in range(start_lag, lags_era5+1) ],
-            'g200': [f'lagged_era5g200_anomalies_lag{lag}' for lag in range(start_lag, lags_era5+1) ],
-            'psl': [f'lagged_era5psl_anomalies_lag{lag}' for lag in range(start_lag, lags_era5+1) ]
-        }
-       
-        self.lagged_vars_g500 = self.lagged_vars['g500']
-        self.lagged_vars_g200 = self.lagged_vars['g200']
-        self.lagged_vars_psl = self.lagged_vars['psl']
-  
-        lagged_vars = self.lagged_vars_g500 + self.lagged_vars_g200 + self.lagged_vars_psl #+ self.lagged_vars_hus850 + self.lagged_vars_hus700#+ self.lagged_vars_hus975 + self.lagged_vars_rsds
-            
-        self.all_features = lagged_vars
-        
-        self.features_g500 = self.ds_g500[self.lagged_vars_g500].to_array().transpose('time', 'variable','lat', 'lon')
-        self.features_g200 = self.ds_g200[self.lagged_vars_g200].to_array().transpose('time', 'variable','lat', 'lon')
-        self.features_psl = self.ds_psl[self.lagged_vars_psl].to_array().transpose('time', 'variable','lat', 'lon')
-        
-        self.features = np.concatenate(
-            [self.features_g500.values, self.features_g200.values, self.features_psl.values],axis=1)
+        # g500
+        if "g500" in self.variables:
+            ds_g500 = xr.open_dataset(file_g500).sel(time=slice(start_date, end_date)).sel(lon=slice(-54,69))
+            ds_g500 = ds_g500.sel(time=ds_g500.time.dt.month.isin(months), drop=True)
+            datasets["g500"] = ds_g500
+            lagged_vars_dict["g500"] = [f'lagged_era5g500_anomalies_lag{lag}' for lag in range(start_lag, lags_era5+1)]
+
+        # g200
+        if "g200" in self.variables:
+            ds_g200 = xr.open_dataset(file_g200).sel(time=slice(start_date, end_date)).sel(lon=slice(-54,69))
+            ds_g200 = ds_g200.sel(time=ds_g200.time.dt.month.isin(months), drop=True)
+            ds_g200 = ds_g200.squeeze('plev', drop=True) #remove plev dimension
+            datasets["g200"] = ds_g200
+            lagged_vars_dict["g200"] = [f'lagged_era5g200_anomalies_lag{lag}' for lag in range(start_lag, lags_era5+1)]
+
+        # psl
+        if "psl" in self.variables:
+            ds_psl = xr.open_dataset(file_psl).sel(time=slice(start_date, end_date)).sel(lon=slice(-54,69))
+            ds_psl = ds_psl.sel(time=ds_psl.time.dt.month.isin(months), drop=True)
+            datasets["psl"] = ds_psl
+            lagged_vars_dict["psl"] = [f'lagged_era5psl_anomalies_lag{lag}' for lag in range(start_lag, lags_era5+1)]
+
+        for key, ds in datasets.items():
+            setattr(self, f"ds_{key}", ds)
+
+        # keep the dict too (optional but may be handy)
+        self.datasets = datasets
+
+        self.lagged_vars = lagged_vars_dict
+        self.all_features = [var for vars_list in lagged_vars_dict.values() for var in vars_list]
+
+        # Convert datasets to arrays in the same shape and concatenate
+        feature_arrays = []
+        for var_name in self.variables:
+            arr = datasets[var_name][self.lagged_vars[var_name]].to_array().transpose('time', 'variable', 'lat', 'lon').values
+            feature_arrays.append(arr)
+
+        self.features = np.concatenate(feature_arrays, axis=1)
 
     def __len__(self):
         return self.features.shape[0]
 
     def __getitem__(self, idx):
-        sample = torch.tensor(self.features[idx], dtype=torch.float32)  # Shape: (num_lags, lat, lon)
-        
+        sample = torch.tensor(self.features[idx], dtype=torch.float32)
         return sample
 
 # --------------------------------------------------------------------------------------------------------------
@@ -179,13 +189,9 @@ class Dataset_count_observational_TX(Dataset):
 # Dataset for ERA5Land including CO2 concentration and lagged soil moisture averaged in time
 
 class ERA5LandDataset_extremes_location_swvl_averaged_including_CO2(Dataset):
-    """
-    Custom Dataset for ERA5 Land Data (Single Point). Uses CO2 concentration and extreme classification labels.
+    """Custom Dataset for ERA5 Land Data (Single Point)."""
 
-    Soil moisture levels (swvl[1,2,3]) are averaged in time. CO2 informations is concatenated, resulting in a feature vector of length 4.
-    """
-
-    def __init__(self, file_path, file_CO2, start_date, end_date, months,scaler=None):
+    def __init__(self, file_path, file_CO2, start_date, end_date, months, variables, scaler=None):
         """
         Args:
             file_path (str): Path to the NetCDF file containing the ERA5 land dataset.
@@ -194,23 +200,30 @@ class ERA5LandDataset_extremes_location_swvl_averaged_including_CO2(Dataset):
             months (list int): List months to filter 
             scaler (sklearn.preprocessing.StandardScaler, optional): Pre-fitted scaler for standardization.
         """
+
+        self.variables = variables  # Store selected variables
+
         # Load dataset with lagged-data and extreme classification 
         self.ds = xr.open_dataset(file_path).sel(time=slice(start_date, end_date))
         self.ds = self.ds.sel(time=self.ds.time.dt.month.isin(months),drop=True) #open selected months 
         self.dsco2 = xr.open_dataset(file_CO2).sel(time=slice(start_date, end_date))
         self.co2conc = self.dsco2['co2_concentration'].values
 
-        # Define lagged variables
-        self.lagged_vars = {
-            'swvl1_anomalies': [f'lagged_era5_land_swvl1_anomalies_lag{i}' for i in range(1, 8)],
-            'swvl2_anomalies': [f'lagged_era5_land_swvl2_anomalies_lag{i}' for i in range(1, 8)],
-            'swvl3_anomalies': [f'lagged_era5_land_swvl3_anomalies_lag{i}' for i in range(1, 8)],
+        # Define all lagged swvl variables
+        all_lagged_vars = {
+            'swvl1': [f'lagged_era5_land_swvl1_anomalies_lag{i}' for i in range(1, 8)],
+            'swvl2': [f'lagged_era5_land_swvl2_anomalies_lag{i}' for i in range(1, 8)],
+            'swvl3': [f'lagged_era5_land_swvl3_anomalies_lag{i}' for i in range(1, 8)],
         }
+
+        # Keep only the ones selected
+        self.lagged_vars = {k: v for k, v in all_lagged_vars.items() if k in self.variables}
 
         # Collect feature names
         self.all_features = ['co2'] + [var for var in self.lagged_vars.keys()] 
 
         # Extract features (lagged-data in each time-step) and labels(exteme/non-extreme)
+
         swvl_avg_features = []
         
         for key in self.lagged_vars:
@@ -223,6 +236,8 @@ class ERA5LandDataset_extremes_location_swvl_averaged_including_CO2(Dataset):
         self.co2conc = self.co2conc.reshape(-1,1)
         self.features = np.concatenate([self.co2conc,self.features_loc],axis=1)
     
+        
+        #self.features = self.ds[self.all_features].to_array(dim='feature').transpose('time', 'feature').values
         self.labels = self.ds['tasmax_extreme_classification'].values
 
         # Remove NaN values from samples 
@@ -230,14 +245,16 @@ class ERA5LandDataset_extremes_location_swvl_averaged_including_CO2(Dataset):
         self.features = self.features[valid_indices]
         self.labels = self.labels[valid_indices]
 
+
     def __len__(self):
         """In our case, the number of time steps in each feature."""
         return len(self.features)
 
     def __getitem__(self, idx):
-        """Returns a selected sample from the dataset using the idx indexes"""                   
+        """Returns a selected sample from the dataset using the idx indexes"""                      # Each idx corresponds to a time step. So each sample is a 27 features values + 1 label value
         return torch.FloatTensor(self.features[idx]), torch.LongTensor([self.labels[idx]]).squeeze() # squeeze labels to get a 1D array 
 
+    
 # -----------------------------------------------------------------------------------------------------------------------------
 # Dataset for ERA5Land including CO2 concentration and spei/spi index
 

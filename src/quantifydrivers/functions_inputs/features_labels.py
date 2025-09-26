@@ -15,7 +15,7 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import cartopy.mpl.ticker as cticker
 import os
-from functions_inputs import loess_functions
+from . import loess_functions
 
 # ========================================================================================================================
 

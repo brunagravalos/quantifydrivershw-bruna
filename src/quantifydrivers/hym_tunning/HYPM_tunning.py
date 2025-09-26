@@ -67,15 +67,14 @@ check_seeds()
 #===========================================================================================================================================================================
 #File paths ERA5 data -----------------------------------------------------------------------------------------------------------------------------------------------------
         
-file_g500 = "/path/to/your/data/g500_1x1_lagged_standarized_anomalies.nc"
-file_g200 = "/path/to/your/data/g200_1x1_lagged_standarized_anomalies.nc"
-file_psl = "/path/to/your/data/psl_1x1_lagged_standarized_anomalies.nc"
+file_g500 = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/std_changed_g500_1x1_lagged_standarized_anomalies.nc"
+file_g200 = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/std_changed_g200_1x1_lagged_standarized_anomalies.nc"
+file_psl = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/std_changed_psl_1x1_lagged_standarized_anomalies.nc"
 
 # File local scale data and extreme classification ------------------------------------------------
-file_local_scale = "/path/to/your/data/lagged_standarized_anomalies_and_extreme_detection.nc"
-    
+file_local_scale = f"/gpfs/scratch/bsc32/bsc167965/tfm_data/era5_land/lagged_anomalies_and_event_detection/{percentile_to_load}_{site}_lagged_standarized_anomalies_and_extreme_detection.nc"    
 # File CO2 data 
-file_CO2 = "/path/to/your/data/CO_data.nc"
+file_CO2 = "/home/bsc/bsc167965/TFM/ML/data_files/daily_co2_JJA.nc"
 
 # Percentile that is used to define the extremes in the local scale data
 percentile = 90
@@ -355,8 +354,8 @@ for site in sites:
     output_dir = "/your/directory/to/save/the/results"
     file_path = os.path.join(output_dir, f"file_name.txt")
 
-    with open(file_path, 'w') as f:
-        f.write(results_content)
+    #with open(file_path, 'w') as f:
+    #    f.write(results_content)
 
 # Now you have the best hyperparameters for each site
 print("\n--- All studies complete ---")

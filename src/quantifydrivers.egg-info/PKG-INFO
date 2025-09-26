@@ -1,0 +1,62 @@
+Metadata-Version: 2.4
+Name: quantifydrivers
+Version: 0.1.0
+Summary: Implementation of a methodology using explainable ML to quantify drivers of temperature extremes ona daily basis.
+Home-page: https://earth.bsc.es/gitlab/agarci8/quantifydrivershw.git
+Description-Content-Type: text/markdown
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: summary
+
+
+# QuantifyDrivers
+
+Implementation of a methodology using explainable ML to quantify drivers of temperature extremes on a daily basis.
+
+---
+
+## Environment
+
+This project is designed to run in a Pangeo container environment using **Singularity**.
+
+### Building the Singularity Image
+
+The required environment can be built from a Pangeo Docker image. If you do not have the Singularity image locally, you can create it with the following command:
+
+```bash
+# This creates a singularity image file named pangeo_pytorch.sif
+singularity build pangeo_pytorch.sif docker://pangeo/pytorch-notebook:latest
+```
+
+### Running Scripts 
+
+To execute a script inside the container, use the **singularity exec** command. You must provide the path to your local Singularity image file.
+
+```bash 
+# Example of running a script
+singularity exec --nv \
+  -B /path/to/your/data:/data \
+  /path/to/your/pangeo_pytorch.sif \
+  python /data/your_script.py
+```
+
+## Installation 
+
+### Local pip install 
+
+1. Clone the repository 
+
+```bash 
+git clone https://earth.bsc.es/gitlab/agarci8/quantifydrivershw.git
+cd quantifydrivershw
+```
+
+2. Local pip install 
+
+```
+pip install 
+```
+
+## Contact 
+For any questions or issues, please contact arnau.garcia@bsc.es. 
