@@ -4,11 +4,14 @@ from quantifydrivers.functions_ML.models import CombinedModel
 from quantifydrivers.functions_ML.convnext_functions import ConvNext
 from quantifydrivers import functions_ML
 
+# Device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+# General Configuration -----------------------------------------------------
 NN_INPUT_DIM = 4       # Corresponds to len(train_dataset.all_features)
 CNN_INPUT_CHANNELS = 3 # Corresponds to len(train_features_era5.all_features)
 OUTPUT_CLASSES = 2
+# ---------------------------------------------------------------------------
 
 
 @pytest.fixture
@@ -19,11 +22,10 @@ def dummy_input_data():
     1. A spatial/temporal input (e.g., climate data)
     2. A simple scalar/vector input (e.g., CO2)
     """
-    # Assuming spatial input has 5 features (channels) and a 30x30 spatial/temporal extent
-    # Shape: (batch_size, channels, height, width)
+    # Shape: (batch_size, channels, height, width). What is passed to the CNN
     spatial_input = torch.randn(4, 5, 30, 30, dtype=torch.float32)
     
-    # Assuming simple input is a vector of 2 features (e.g., [CO2, SWVL_AVG])
+    # Simple input is a vector of 2 features (e.g., [CO2, swlv]). What is pased to the MLP
     # Shape: (batch_size, features)
     simple_input = torch.randn(4, 2, dtype=torch.float32)
     

@@ -59,7 +59,10 @@ def create_lagged_features_single(dataset, var, lags, new_prefix):
     
     for lag in lags:
         var_name = f"{new_prefix}{var}_anomalies_lag{lag}"
-        new_var = dataset[f'{var}_anomalies'].shift(time=lag)
+        try:
+            new_var = dataset[f'{var}_anomalies'].shift(time=lag)
+        except KeyError:
+            new_var = dataset[f'{var}'].shift(time=lag)
         new_var.attrs = {
             'long_name': f'{lags} lags {var}_anomalies lag number {lag}',
             'description': (
