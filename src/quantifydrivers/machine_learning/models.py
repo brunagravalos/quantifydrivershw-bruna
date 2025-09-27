@@ -91,7 +91,7 @@ class ToCombineExtremeClassifier(nn.Module):
         self.train_alone_NN = train_alone_NN
 
         if self.train_alone_NN:
-            self.final_classification = nn.Linear(8, num_classes) # From hidden dim to output classes
+            self.final_classification = nn.Linear(8, num_classes) 
 
     def forward(self, x):                         
         if isinstance(x, np.ndarray): 
@@ -135,7 +135,6 @@ class CombinedModel(nn.Module):
             nn.ReLU(),
             nn.Linear(32, 8),
             nn.ReLU(),
-            #nn.Dropout(p=0.2),
             nn.Linear(8,output_dim)
         )
         

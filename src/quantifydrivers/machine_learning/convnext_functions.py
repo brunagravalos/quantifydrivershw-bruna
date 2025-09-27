@@ -135,7 +135,7 @@ class Permute(nn.Module):
 
 class ConvNextBlock(nn.Module):
 
-    def __init__(self, filter_dim, layer_scale=1e-6): #, dilation=1, padding_mode='zeros'): #original does not have dilation and padding_mode as arguments 
+    def __init__(self, filter_dim, layer_scale=1e-6): 
         super().__init__()
 
         kernel_size = 7 
@@ -146,7 +146,6 @@ class ConvNextBlock(nn.Module):
                       kernel_size=7,
                       padding=3,      
                       groups=filter_dim,
-                      #dilation = dilation,
                       ),
                 
             Permute([0, 2, 3, 1]),
@@ -169,10 +168,7 @@ class ConvNextLayer(nn.Module):
         self.blocks = nn.ModuleList([])
 
         for _ in range(depth):
-            self.blocks.append(ConvNextBlock(filter_dim=filter_dim  # original only has filter_dim as argument
-                                            #layer_scale=1e-6, 
-                                            #dilation=dilation, 
-                                            ))
+            self.blocks.append(ConvNextBlock(filter_dim=filter_dim ))
 
         self.drop_rates = drop_rates
 
@@ -187,10 +183,6 @@ class ConvNextLayer(nn.Module):
                                          mode="batch",
                                          training=self.training)
     
-            #x = x + stochastic_depth(block(x),
-            #                         self.drop_rates[idx],
-            #                         mode="batch",
-            #                         training=self.training)
         return x
 
 
@@ -234,9 +226,9 @@ class ConvNext(nn.Module):
 
         if not self.train_alone:
             self.spatial_aggregator = nn.Sequential(
-                nn.AdaptiveAvgPool2d((1, 1)),  # Reduces spatial dims to 1x1
+                nn.AdaptiveAvgPool2d((1, 1)),  
                 nn.Flatten(),
-                nn.Linear(layer_dims[-1], 16)  # Project to desired hidden dim
+                nn.Linear(layer_dims[-1], 16)  
             )
 
     def forward(self, x):

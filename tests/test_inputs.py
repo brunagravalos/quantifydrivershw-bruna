@@ -4,9 +4,9 @@ import xarray as xr
 import pandas as pd
 from datetime import datetime
 
-from quantifydrivers.functions_inputs import loess_functions
-from quantifydrivers.functions_inputs import data_preprocess
-from quantifydrivers.functions_inputs import features_labels
+from quantifydrivers.tools import loess
+from quantifydrivers.tools import lagged_data, regrid
+from quantifydrivers.tools import clim
 
 # ==============================================================================
 # Fixtures for Dummy Data
@@ -50,7 +50,7 @@ def dummy_xarray_dataset():
     return ds
 
 # ==============================================================================
-# Test loess_functions.py
+# Test loess.py
 # ==============================================================================
 
 def test_loess_ts_output_shape(dummy_timeseries):
@@ -59,7 +59,7 @@ def test_loess_ts_output_shape(dummy_timeseries):
     window = 30 # rolling-window for smoothinf
     degree = 1 # degree of fitting 
      
-    result = loess_functions.loess_ts(ts, na_rm=True, window=window, degree=degree)
+    result = loess.loess_ts(ts, na_rm=True, window=window, degree=degree)
     
     # Output is a numpy array
     assert isinstance(result, np.ndarray)
@@ -69,7 +69,7 @@ def test_loess_ts_output_shape(dummy_timeseries):
     assert not np.allclose(result, ts, atol=0.1)
 
 # ==============================================================================
-# Test data_preprocess.py
+# Test lagged_data.py
 # ==============================================================================
 
 def test_create_lagged_features_single_correctness(dummy_xarray_dataset):
@@ -83,7 +83,7 @@ def test_create_lagged_features_single_correctness(dummy_xarray_dataset):
     original_data_array = ds[var] 
 
     # The function returns a new Dataset containing only the lagged variables
-    ds_lagged = data_preprocess.create_lagged_features_single(ds, var, lags, new_prefix)
+    ds_lagged = lagged_data.create_lagged_features_single(ds, var, lags, new_prefix)
     
     # 1. Check that lagged variables are present
     lag1_var = f'{new_prefix}{var}_anomalies_lag1'
@@ -106,7 +106,7 @@ def test_create_lagged_features_single_correctness(dummy_xarray_dataset):
     assert np.allclose(lag1_flat[1:], original_flat[:-1], equal_nan=False)
 
 # ==============================================================================
-# Test data_preprocess.py (Multiple Features Lag)
+# Test lagged_data.py (Multiple Features Lag)
 # ==============================================================================
 
 def test_create_lagged_features_multiple_correctness(dummy_xarray_dataset):
@@ -118,7 +118,7 @@ def test_create_lagged_features_multiple_correctness(dummy_xarray_dataset):
     new_prefix = 'era5_'
 
     # The function returns a copy of the original dataset with new variables added
-    ds_lagged = data_preprocess.create_lagged_features_multiple(ds, variables, lag_dict, new_prefix)
+    ds_lagged = lagged_data.create_lagged_features_multiple(ds, variables, lag_dict, new_prefix)
 
     # 1. Check for expected new variables (NOTE: This function does NOT add '_anomalies')
     expected_vars = [
@@ -148,7 +148,7 @@ def test_create_lagged_features_multiple_correctness(dummy_xarray_dataset):
     assert np.allclose(lagged_flat[lag:], original_flat[:-lag], equal_nan=False)
 
 # ==============================================================================
-# Test features_labels.py
+# Test clim.py
 # ==============================================================================
 
 def test_Compute_climatology_output_dims(dummy_xarray_dataset):
@@ -164,7 +164,7 @@ def test_Compute_climatology_output_dims(dummy_xarray_dataset):
     date2 = str(ds.time.max().dt.date.item())
     
     # Compute_climatology returns: climatology, clim_window, window_series, loess_climatology
-    results = features_labels.Compute_climatology(ds, variable, window, date1, date2)
+    results = clim.Compute_climatology(ds, variable, window, date1, date2)
         
     # 1. Check number of returns
     assert len(results) == 4

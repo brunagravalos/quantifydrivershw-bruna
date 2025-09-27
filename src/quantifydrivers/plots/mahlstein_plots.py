@@ -20,7 +20,7 @@ import ast
 import xesmf as xe#for regridding 
 from matplotlib.backends.backend_pdf import PdfPages
 
-from functions_inputs import data_preprocess, loess_functions
+from tools import lagged_data, loess
 
 # =====================================================================================================================
 
@@ -54,7 +54,7 @@ for site,site_label in zip(sites,sites_labels):
     climatology,percentile,clim_window,window_series,loess_clim = functions_HW.Compute_window_percentile_reference_period(ds,variable,0.9,5,'1950','2000')
 
     #apply LOESS to percentile array
-    percentile_LOESS = loess_functions.loess_ts(percentile, na_rm=True,  window=40,  degree=1)
+    percentile_LOESS = loess.loess_ts(percentile, na_rm=True,  window=40,  degree=1)
     
     # Plot
     fig, ax = plt.subplots(figsize=(12.6, 10))

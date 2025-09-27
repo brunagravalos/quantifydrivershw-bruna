@@ -1,8 +1,8 @@
 import pytest
 import torch
-from quantifydrivers.functions_ML.models import CombinedModel
-from quantifydrivers.functions_ML.convnext_functions import ConvNext
-from quantifydrivers import functions_ML
+from quantifydrivers.machine_learning.models import CombinedModel
+from quantifydrivers.machine_learning.convnext_functions import ConvNext
+from quantifydrivers import machine_learning
 
 # Device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -68,7 +68,7 @@ def test_combinedmodel_output_shape(dummy_input_data):
 
     # 1. Initialize the Component Models
     
-    NN_model = functions_ML.ToCombineExtremeClassifier(
+    NN_model = machine_learning.ToCombineExtremeClassifier(
         input_dim=simple_features,            
         train_alone_NN=False, 
         num_classes=output_classes
@@ -113,7 +113,7 @@ def test_combinedmodel_trainable_parameters():
     """Checks if the CombinedModel has a significant number of trainable parameters."""
 
     # 1. Initialize Component Models using hardcoded dimensions
-    NN_model = functions_ML.ToCombineExtremeClassifier(
+    NN_model = machine_learning.ToCombineExtremeClassifier(
         input_dim=NN_INPUT_DIM,
         train_alone_NN=False,
         num_classes=OUTPUT_CLASSES

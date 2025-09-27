@@ -32,7 +32,7 @@ import gc
 import tqdm
 import argparse
 
-import functions_ML
+import machine_learning
 import convnext_functions
 
 # ======================================================================================================
@@ -65,8 +65,8 @@ check_seeds()
 # ============================================================================================================================================================================
 # 2. File paths and configurations
 #===========================================================================================================================================================================
-#File paths ERA5 data -----------------------------------------------------------------------------------------------------------------------------------------------------
-        
+
+#File paths ERA5 data -----------------------------------------------------------------------------------------------------------------------------------------------------     
 file_g500 = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/std_changed_g500_1x1_lagged_standarized_anomalies.nc"
 file_g200 = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/std_changed_g200_1x1_lagged_standarized_anomalies.nc"
 file_psl = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/std_changed_psl_1x1_lagged_standarized_anomalies.nc"
@@ -89,6 +89,7 @@ HYPMS = dict(
     w_decay= 0.01,
 )
 
+# Dataset configuration ----------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Start date for all datasets
 start_date = "1950-01-01"
@@ -130,6 +131,8 @@ lags_era5 = 1,
 variables = variables_era5       
     )
 
+# -------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 # Number of lags for the larg-scale data ----------------------------------------------------------------------------------------------------------------------------------
 number_lags = _ERA5_TEST_DATASET_CONF['lags_era5']
 
@@ -149,13 +152,13 @@ train_cnn_alone = False
 
 def verify_determinism():
     # Check PyTorch
-    print(f"PyTorch rand(): {torch.rand(1).item()}")  # Should match across runs
+    print(f"PyTorch rand(): {torch.rand(1).item()}")  
     
     # Check NumPy
-    print(f"NumPy rand(): {np.random.rand()}")  # Should match
+    print(f"NumPy rand(): {np.random.rand()}") 
     
     # Check Python random
-    print(f"Python random(): {random.random()}")  # Should match
+    print(f"Python random(): {random.random()}")  
 
 # Function to Reset the seed, for determinsim in the computations *********************************************************************************************************
 
@@ -165,13 +168,13 @@ def reset_seeds(seed=42):
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-    g.manual_seed(seed)  # For DataLoader's generator
+    g.manual_seed(seed) 
 
 
 # Generate list of seeds for the ensamble loop ***************************************************************************************************************************
 
 def generate_ensemble_seeds(fixed_seed=123):
-    rng = np.random.default_rng(fixed_seed) #generator
+    rng = np.random.default_rng(fixed_seed)
     seeds = rng.integers(low=0, high=2**32 - 1, size=1).tolist()
     return seeds
 
@@ -236,7 +239,7 @@ def objective(trial, site, seed, train_subset_combined, val_subset_combined):
 
     # Initialize models
     reset_seeds(seed)
-    NN_model = functions_ML.ToCombineExtremeClassifier(input_dim=len(train_dataset.all_features), train_alone_NN=False, num_classes=2).to(device)
+    NN_model = machine_learning.ToCombineExtremeClassifier(input_dim=len(train_dataset.all_features), train_alone_NN=False, num_classes=2).to(device)
     CNN_model = convnext_functions.ConvNext(
         num_channels=len(train_features_era5.all_features),
         num_classes=2,
@@ -247,7 +250,7 @@ def objective(trial, site, seed, train_subset_combined, val_subset_combined):
         train_alone=False
     ).to(device)
     
-    model = functions_ML.CombinedModel(NN_model, CNN_model, nn_hidden_dim=8, cnn_hidden_dim=16, output_dim=2).to(device)
+    model = machine_learning.CombinedModel(NN_model, CNN_model, nn_hidden_dim=8, cnn_hidden_dim=16, output_dim=2).to(device)
     
     # Optimizer
     optimizer_combined = optim.AdamW(model.parameters(), lr=lr, weight_decay=w_decay)
@@ -261,7 +264,7 @@ def objective(trial, site, seed, train_subset_combined, val_subset_combined):
     # =================================================================================
     print("Training combined model...")
     reset_seeds(seed)
-    losses_train, losses_val, _ , best_val_loss = functions_ML.train_CombinedModel(
+    losses_train, losses_val, _ , best_val_loss = machine_learning.train_CombinedModel(
         model, combined_train_loader, combined_val_loader, criterion=criterion,
         optimizer=optimizer_combined, num_epochs=50, # Use a fixed large number of epochs
         plot_loss=False, print_loss=False, early_stop=True, patience=5, print_early_stop=True, trial=trial, 
@@ -270,13 +273,13 @@ def objective(trial, site, seed, train_subset_combined, val_subset_combined):
     )
 
     # Evaluate on the validation set to get the score for this trial
-    y_true_val, y_pred_val, _, extreme_acc_val, nonextreme_acc_val = functions_ML.evaluate_CombinedModel(
+    y_true_val, y_pred_val, _, extreme_acc_val, nonextreme_acc_val = machine_learning.evaluate_CombinedModel(
         CombinedModel=model, cnn=cnn_model, nn=nn_model,
-        test_loader=combined_val_loader, # <-- IMPORTANT: Use validation loader
+        test_loader=combined_val_loader, 
         print_accuracies=False, train_alone=False
     )
     
-    final_val_loss = best_val_loss # use the best val loos found before ealy stoping 
+    final_val_loss = best_val_loss # use the best val loos found before early stoping 
 
     # =================================================================================
     # 5. Define and Return the Score to be Optimized
@@ -300,15 +303,15 @@ seed = list_seeds[0] # Using a single seed for the tuning process
 
 # Load the train features for ERA5, reducing time 
 
-train_features_era5 = functions_ML.ERA5Dataset_extremes(file_g500,file_g200,file_psl, **_ERA5_TRAIN_DATASET_CONF)
+train_features_era5 = machine_learning.ERA5Dataset_extremes(file_g500,file_g200,file_psl, **_ERA5_TRAIN_DATASET_CONF)
 
 # Start hyperparameter tuning for each site -----------------------------------------------------------------------------------
 
 for site in sites:
 
     # Prepare datasets     
-    train_dataset = functions_ML.ERA5LandDataset_extremes_location_swvl_averaged_including_CO2(file_path=file_local_scale, file_CO2=file_CO2 ,**_ERA5LAND_TRAIN_DATASET_CONF)
-    combined_train_dataset = functions_ML.CombinedDataset(train_dataset, train_features_era5,variables=variables_era5)
+    train_dataset = machine_learning.ERA5LandDataset_extremes_location_swvl_averaged_including_CO2(file_path=file_local_scale, file_CO2=file_CO2 ,**_ERA5LAND_TRAIN_DATASET_CONF)
+    combined_train_dataset = machine_learning.CombinedDataset(train_dataset, train_features_era5,variables=variables_era5)
     
     g = torch.Generator()
     g.manual_seed(seed)
@@ -325,7 +328,7 @@ for site in sites:
         direction="maximize",
         pruner=optuna.pruners.MedianPruner(n_warmup_steps=5)) # Maximize the score defined!
     study.optimize(lambda trial: objective(trial, site=site, seed=seed, 
-                    train_subset_combined=train_subset_combined , val_subset_combined= val_subset_combined), n_trials=20) # Run 20 trials
+                    train_subset_combined=train_subset_combined , val_subset_combined= val_subset_combined), n_trials=20) # Run n trials
 
     # Store the best parameters found for the site
     best_params = study.best_trial.params
@@ -357,7 +360,6 @@ for site in sites:
     #with open(file_path, 'w') as f:
     #    f.write(results_content)
 
-# Now you have the best hyperparameters for each site
 print("\n--- All studies complete ---")
 print("Best hyperparameters found for each site:")
 print(best_params_per_site)

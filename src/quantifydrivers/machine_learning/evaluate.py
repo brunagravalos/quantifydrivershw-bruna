@@ -58,7 +58,7 @@ def evaluate_model(model, testloader):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
-    model.eval()  # Set the model to evaluation mode
+    model.eval()  
     correct_extreme = 0  
     correct_non_extreme = 0 
     total_extreme = 0  
@@ -68,28 +68,26 @@ def evaluate_model(model, testloader):
     y_pred = []
     outputs_prob = []
 
-    with torch.no_grad():  # Disable gradient tracking during evaluation (saves memory and computations)
+    with torch.no_grad():  
         for inputs, labels in testloader:
             inputs, labels = inputs.to(device), labels.to(device)
-            # Forward pass
-            outputs = model(inputs) #raw logits 
+            outputs = model(inputs) 
             _, predicted = torch.max(outputs, 1)
 
             # Filter outputs acording to 
-
             y_true.extend(labels.cpu().numpy())
             y_pred.extend(predicted.cpu().numpy())
             outputs_prob.extend(outputs.cpu())
             
             # Compare predictions to true labels
             for i in range(len(labels)):
-                if labels[i] == 0:  # Non-extreme day
+                if labels[i] == 0:  
                     total_non_extreme += 1
-                    if predicted[i] == 0:  # Correct classification
+                    if predicted[i] == 0:  
                         correct_non_extreme += 1
-                elif labels[i] == 1:  # Extreme day
+                elif labels[i] == 1:  
                     total_extreme += 1
-                    if predicted[i] == 1:  # Correct classification
+                    if predicted[i] == 1:  
                         correct_extreme += 1
     
     # Calculate accuracy
@@ -113,15 +111,15 @@ def gather_ensamble_probabilities(CombinedModel,cnn,nn,test_loader):
     Returns 2D array with the probabilitites for class 0 and 1 across samples. 
     '''
 
-    CombinedModel.eval()  # set model to evaluation mode
+    CombinedModel.eval() 
     cnn.eval()
     nn.eval()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    outputs_prob = [] # store probabilities from output 
+    outputs_prob = [] 
 
-    with torch.no_grad():  # no gradient needed
+    with torch.no_grad(): 
         for local,regional,labels in test_loader:
             local,regional,labels = local.to(device), regional.to(device), labels.to(device)
 
@@ -147,7 +145,7 @@ def evaluate_ensamble(CombinedModel,cnn,nn,test_loader,probs_ensamble,print_accu
     
     Returns: y_true, y_pred, extreme_accuracy, non_extreme_accuracy'''
 
-    CombinedModel.eval()  # set model to evaluation mode
+    CombinedModel.eval()  
     cnn.eval()
     nn.eval()
 
@@ -162,7 +160,7 @@ def evaluate_ensamble(CombinedModel,cnn,nn,test_loader,probs_ensamble,print_accu
     y_true = []
     y_pred = []
 
-    with torch.no_grad(): # no gradient needed
+    with torch.no_grad(): 
         for i,(local,regional,labels) in enumerate(test_loader):
             local,regional,labels = local.to(device), regional.to(device), labels.to(device)
 
@@ -208,7 +206,7 @@ def evaluate_CombinedModel(CombinedModel,cnn,nn,test_loader, print_accuracies=Tr
     
     Returns: y_true, y_pred, outputs_prob, extreme_accuracy, non_extreme_accuracy'''
 
-    CombinedModel.eval()  # set model to evaluation mode
+    CombinedModel.eval()  
     cnn.eval()
     nn.eval()
 

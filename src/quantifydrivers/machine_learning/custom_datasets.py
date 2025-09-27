@@ -118,7 +118,7 @@ class ERA5Dataset_extremes(Dataset):
         if "g200" in self.variables:
             ds_g200 = xr.open_dataset(file_g200).sel(time=slice(start_date, end_date)).sel(lon=slice(-54,69))
             ds_g200 = ds_g200.sel(time=ds_g200.time.dt.month.isin(months), drop=True)
-            ds_g200 = ds_g200.squeeze('plev', drop=True) #remove plev dimension
+            ds_g200 = ds_g200.squeeze('plev', drop=True) 
             datasets["g200"] = ds_g200
             lagged_vars_dict["g200"] = [f'lagged_era5g200_anomalies_lag{lag}' for lag in range(start_lag, lags_era5+1)]
 
@@ -132,7 +132,7 @@ class ERA5Dataset_extremes(Dataset):
         for key, ds in datasets.items():
             setattr(self, f"ds_{key}", ds)
 
-        # keep the dict too (optional but may be handy)
+        # keep the dict 
         self.datasets = datasets
 
         self.lagged_vars = lagged_vars_dict
@@ -172,7 +172,6 @@ class Dataset_count_observational_TX(Dataset):
         self.ds = xr.open_dataset(file_path).sel(time=slice(start_date, end_date))
         self.ds = self.ds.sel(time=self.ds.time.dt.month.isin(months),drop=True) #open selected months 
         
-        #self.features = self.ds[self.all_features].to_array(dim='feature').transpose('time', 'feature').values
         self.labels = self.ds['tx_mean_extreme_classification'].values
 
 
@@ -181,8 +180,8 @@ class Dataset_count_observational_TX(Dataset):
         return len(self.features)
 
     def __getitem__(self, idx):
-        """Returns a selected sample from the dataset using the idx indexes"""                      # Each idx corresponds to a time step. So each sample is a 27 features values + 1 label value
-        return torch.FloatTensor(self.features[idx]), torch.LongTensor([self.labels[idx]]).squeeze() # squeeze labels to get a 1D array 
+        """Returns a selected sample from the dataset using the idx indexes"""                      
+        return torch.FloatTensor(self.features[idx]), torch.LongTensor([self.labels[idx]]).squeeze() 
 
     
 # ------------------------------------------------------------------------------------------------------------------------------
@@ -205,7 +204,7 @@ class ERA5LandDataset_extremes_location_swvl_averaged_including_CO2(Dataset):
 
         # Load dataset with lagged-data and extreme classification 
         self.ds = xr.open_dataset(file_path).sel(time=slice(start_date, end_date))
-        self.ds = self.ds.sel(time=self.ds.time.dt.month.isin(months),drop=True) #open selected months 
+        self.ds = self.ds.sel(time=self.ds.time.dt.month.isin(months),drop=True)
         self.dsco2 = xr.open_dataset(file_CO2).sel(time=slice(start_date, end_date))
         self.co2conc = self.dsco2['co2_concentration'].values
 
@@ -236,8 +235,6 @@ class ERA5LandDataset_extremes_location_swvl_averaged_including_CO2(Dataset):
         self.co2conc = self.co2conc.reshape(-1,1)
         self.features = np.concatenate([self.co2conc,self.features_loc],axis=1)
     
-        
-        #self.features = self.ds[self.all_features].to_array(dim='feature').transpose('time', 'feature').values
         self.labels = self.ds['tasmax_extreme_classification'].values
 
         # Remove NaN values from samples 
@@ -251,8 +248,8 @@ class ERA5LandDataset_extremes_location_swvl_averaged_including_CO2(Dataset):
         return len(self.features)
 
     def __getitem__(self, idx):
-        """Returns a selected sample from the dataset using the idx indexes"""                      # Each idx corresponds to a time step. So each sample is a 27 features values + 1 label value
-        return torch.FloatTensor(self.features[idx]), torch.LongTensor([self.labels[idx]]).squeeze() # squeeze labels to get a 1D array 
+        """Returns a selected sample from the dataset using the idx indexes"""                      
+        return torch.FloatTensor(self.features[idx]), torch.LongTensor([self.labels[idx]]).squeeze() 
 
     
 # -----------------------------------------------------------------------------------------------------------------------------
@@ -280,7 +277,7 @@ class ERA5LandDataset_extremes_location_spei(Dataset):
         """
         # Load dataset with lagged-data and extreme classification 
         self.ds = xr.open_dataset(file_path).sel(time=slice(start_date, end_date))
-        self.ds = self.ds.sel(time=self.ds.time.dt.month.isin(months),drop=True) #open selected months 
+        self.ds = self.ds.sel(time=self.ds.time.dt.month.isin(months),drop=True) 
 
         # spei data
         if len(files_spei) > 1:
@@ -327,7 +324,7 @@ class ERA5LandDataset_extremes_location_spei(Dataset):
         return len(self.features)
 
     def __getitem__(self, idx):
-        """Returns a selected sample from the dataset using the idx indexes"""                      # Each idx corresponds to a time step. So each sample is a 27 features values + 1 label value
-        return torch.FloatTensor(self.features[idx]), torch.LongTensor([self.labels[idx]]).squeeze() # squeeze labels to get a 1D array 
+        """Returns a selected sample from the dataset using the idx indexes"""                     
+        return torch.FloatTensor(self.features[idx]), torch.LongTensor([self.labels[idx]]).squeeze() 
 
 # =============================================================================================================================

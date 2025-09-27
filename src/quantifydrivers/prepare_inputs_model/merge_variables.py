@@ -48,7 +48,6 @@ for site in sites:
             ds = xr.open_dataset(file_path)
         else:
             file_path = os.path.join(input_directory, f"era5land_{var_name_file}_data_{site}_1950_2024.nc")
-            # Open the dataset      
             ds = xr.open_dataset(file_path)
         
         # --- Handle each variable to ensure correct name and string units ---
@@ -73,7 +72,7 @@ for site in sites:
 
             ds_to_add = ds[['tasmax']]
 
-        else: # This handles 'tas' and 'tasmin'
+        else: 
             print(f"  - Ensuring units for '{var_name}' are set...")
             # Explicitly set units as a string
             ds[var_name].attrs['units'] = str('K')

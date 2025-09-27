@@ -74,8 +74,6 @@ def train_NNmodel(model, combined_train_loader, combined_val_loader, criterion, 
     losses_train = []
     losses_val = []
         
-    # training 
-
     best_val_loss = float('inf')
     patience_counter = 0
     best_model_state = None
@@ -119,7 +117,7 @@ def train_NNmodel(model, combined_train_loader, combined_val_loader, criterion, 
     
             val_batches = 0
     
-            with torch.no_grad():  # No gradient computation 
+            with torch.no_grad():  
                 for local,regional,label in combined_val_loader:
                     val_local,val_regional,val_labels = local.to(device), regional.to(device), label.to(device)
                     
@@ -149,7 +147,7 @@ def train_NNmodel(model, combined_train_loader, combined_val_loader, criterion, 
             losses_val.append(avg_val_loss)
     
             if early_stop:
-                if avg_val_loss < best_val_loss: #check validation loss 
+                if avg_val_loss < best_val_loss: #Check validation loss for early stopping 
                     best_val_loss = avg_val_loss
                     patience_counter = 0
                     best_model_state = model.state_dict()
@@ -175,7 +173,7 @@ def train_NNmodel(model, combined_train_loader, combined_val_loader, criterion, 
         plt.legend()
         plt.show()
 
-    return losses_train, losses_val #, F.softmax(torch.cat(out_probabilitites),dim=1)
+    return losses_train, losses_val
 
 # --------------------------------------------------------------------------------------------------------------
 # For training the CNN model alone -----------------------------------------------------------------------------
@@ -209,8 +207,6 @@ def train_CNNmodel(model, combined_train_loader, combined_val_loader, criterion,
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
-    # training 
-
     best_val_loss = float('inf')
     patience_counter = 0
     best_model_state = None
@@ -284,7 +280,7 @@ def train_CNNmodel(model, combined_train_loader, combined_val_loader, criterion,
     
             if early_stop:
                 epoch += 1
-                if avg_val_loss < best_val_loss: #check validation loss 
+                if avg_val_loss < best_val_loss: #check validation loss fro early stopping
                     best_val_loss = avg_val_loss
                     patience_counter = 0
                     best_model_state = model.state_dict()
@@ -348,8 +344,6 @@ def train_CombinedModel(model, combined_train_loader, combined_val_loader, crite
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
-    # training 
-
     best_val_loss = float('inf')
     patience_counter = 0
     best_model_state = None

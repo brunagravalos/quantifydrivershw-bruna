@@ -26,12 +26,8 @@ sites = ["cordoba", "hannover", "stockholm", "lyon", "belgrado"]
 
 # --- 2. SPI Calculation Parameters ---
 
-# Define the SPI timescale in days
-scale = 90
-
-# Define the reference period for calibrating the index
-ref_years = np.arange(1951, 2000)
-
+scale = 90 # Define the SPI timescale in days
+ref_years = np.arange(1951, 2000) # Define the reference period for calibrating the index
 distribution = 'gamma'  # Distribution for SPEI calculation
 
 # --- 3. Main Processing Loop ---
@@ -46,12 +42,10 @@ for site in sites:
     
     try:
         # Construct the input filename for the current site
-        #input_filename = f"combined_eobs_land_data_{site}.nc"
         input_filename = f"combined_era5land_land_data_{site}.nc"
         input_path = os.path.join(data_directory, input_filename)
         
         # Load the combined dataset for the site
-        # We still load the full file to get 'pr' and 'tasmax'
         climate_data = xr.open_dataset(input_path)
         climate_data = climate_data.drop_vars("height")
         print(f"  -> Successfully loaded {input_filename}")
@@ -64,7 +58,7 @@ for site in sites:
 
         # 1. Resample the daily precipitation to daily sums
         pr = climate_data.pr
-        pr.attrs['units'] = 'mm/day'  # Ensure units are set correctly
+        pr.attrs['units'] = 'mm/day'  # Ensure correct units for SPI calculation
         
         # 2. Select the calibration data
         cal_strt, cal_end = ref_years[0], ref_years[-1]
@@ -74,7 +68,7 @@ for site in sites:
             pr,
             freq='D',
             window=scale,
-            dist=distribution,  # Gamma is the standard distribution for SPI
+            dist=distribution,  
             method='ML',
             cal_start=f"{cal_strt}-01-01",
             cal_end=f"{cal_end}-12-31"

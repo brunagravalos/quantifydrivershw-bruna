@@ -15,7 +15,7 @@ import xclim
 # ==========================================================================================
 
 
-# --- 1. General Configuration ---
+# --- 1. General Configuration -----------------------------------------------
 
 # Directory where your 'combined_climate_data' files are stored
 data_directory = "/path/to/your/data/input/"
@@ -23,7 +23,7 @@ output_directory = "/path/to/your/data/output/"
 
 # List of sites to process
 sites = ["cordoba","hannover", "stockholm", "lyon", "belgrado", "marrakech"]
-#sites = ['belgrado']
+
 site_latitudes = {
     "cordoba": 37.88,
     "hannover": 52.37,
@@ -41,7 +41,7 @@ scale = 90     # SPEI timescale in days
 distribution = 'gamma'  
 daily_or_monthly = 'daily'  # Indicates if the data is daily or monthly
 ref_years = np.arange(1951, 2000)  # Reference period
-using_era5land = True  # Set to True if using ERA5-Land data with sub-daily resolution
+using_era5land = True  # Set to True if using ERA5-Land data 
 # ===========================================================================
 
 
@@ -80,6 +80,7 @@ for site in sites:
         # --- Calculate Potential Evapotranspiration (PET) ---
         print(f"  -> Calculating Potential Evapotranspiration (PET) using '{method}' method...")
 
+        # IF statement to ensure no repeated dates are present due two differences in the hours of the time series
         if using_era5land:
             # Check for duplicate dates
             daily_timestamps = climate_data['time'].dt.floor('D')
