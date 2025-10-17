@@ -212,7 +212,7 @@ for site in sites:
     file_psl = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/std_changed_psl_1x1_lagged_standarized_anomalies.nc"
 
     # File local scale data and extreme classification ------------------------------------------------
-    file_local_scale = f"/gpfs/scratch/bsc32/bsc167965/tfm_data/era5_land/lagged_anomalies_and_event_detection/{percentile_to_load}_{site}_lagged_standarized_anomalies_and_extreme_detection.nc"
+    file_local_scale = f"/gpfs/scratch/bsc32/bsc167965/tfm_data/era5_land/obs_lagged_anomalies_and_event_detection/obs_{site}_lagged_standarized_anomalies_and_extreme_detection.nc"
     
     # File CO2 data --------------------------------------------------------------------------------------
     file_CO2 = "/home/bsc/bsc167965/TFM/ML/data_files/daily_co2_JJA.nc"
