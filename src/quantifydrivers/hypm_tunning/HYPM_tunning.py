@@ -10,7 +10,6 @@ import pandas as pd
 import torch
 import xarray as xr
 import numpy as np
-from skimage import io, transform
 import random
 import matplotlib.pyplot as plt
 from torchvision import transforms, utils
@@ -67,9 +66,9 @@ check_seeds()
 #===========================================================================================================================================================================
 
 #File paths ERA5 data -----------------------------------------------------------------------------------------------------------------------------------------------------     
-file_g500 = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/std_changed_g500_1x1_lagged_standarized_anomalies.nc"
-file_g200 = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/std_changed_g200_1x1_lagged_standarized_anomalies.nc"
-file_psl = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/std_changed_psl_1x1_lagged_standarized_anomalies.nc"
+file_g500 = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/g500_1x1_lagged_standarized_anomalies.nc"
+file_g200 = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/g200_1x1_lagged_standarized_anomalies.nc"
+file_psl = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/psl_1x1_lagged_standarized_anomalies.nc"
 
 # File local scale data and extreme classification ------------------------------------------------
 file_local_scale = f"/gpfs/scratch/bsc32/bsc167965/data/era5_land/lagged_anomalies_and_event_detection/{percentile_to_load}_{site}_lagged_standarized_anomalies_and_extreme_detection.nc"    
@@ -303,14 +302,14 @@ seed = list_seeds[0] # Using a single seed for the tuning process
 
 # Load the train features for ERA5, reducing time 
 
-train_features_era5 = machine_learning.ERA5Dataset_extremes(file_g500,file_g200,file_psl, **_ERA5_TRAIN_DATASET_CONF)
+train_features_era5 = machine_learning.LargeScale_Dataset_extremes(file_g500,file_g200,file_psl, **_ERA5_TRAIN_DATASET_CONF)
 
 # Start hyperparameter tuning for each site -----------------------------------------------------------------------------------
 
 for site in sites:
 
     # Prepare datasets     
-    train_dataset = machine_learning.ERA5LandDataset_extremes_location_swvl_averaged_including_CO2(file_path=file_local_scale, file_CO2=file_CO2 ,**_ERA5LAND_TRAIN_DATASET_CONF)
+    train_dataset = machine_learning.LocalScale_Dataset_extremes_location_swvl_averaged_including_CO2(file_path=file_local_scale, file_CO2=file_CO2 ,**_ERA5LAND_TRAIN_DATASET_CONF)
     combined_train_dataset = machine_learning.CombinedDataset(train_dataset, train_features_era5,variables=variables_era5)
     
     g = torch.Generator()

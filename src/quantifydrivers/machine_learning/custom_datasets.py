@@ -30,11 +30,11 @@ import torch.nn.functional as F
 #
 # Main classes:
 #   - CombinedDataset: Combines local-scale and large-scale datasets while ensuring temporal coherence.
-#   - ERA5Dataset_extremes: Loads large-scale ERA5 predictors (g500, g200, psl) with lagged anomalies.
+#   - LargeScale_Dataset_extremes: Loads large-scale ERA5 predictors (g500, g200, psl) with lagged anomalies.
 #   - Dataset_count_observational_TX: Handles observational ERA5-Land data (single point) with extremes.
-#   - ERA5LandDataset_extremes_location_swvl_averaged_including_CO2: Uses averaged soil moisture anomalies
+#   - LocalScale_Dataset_extremes_location_swvl_averaged_including_CO2: Uses averaged soil moisture anomalies
 #       and CO2 concentration as predictors for extreme classification.
-#   - ERA5LandDataset_extremes_location_spei: Combines CO2 concentration and drought indices (SPEI/SPI)
+#   - SPEI_extremes_location_dataset: Combines CO2 concentration and drought indices (SPEI/SPI)
 #       as predictors for extreme classification.
 #
 # Features:
@@ -52,12 +52,15 @@ import torch.nn.functional as F
 
 class CombinedDataset(torch.utils.data.Dataset):
 
-    def __init__(self, local_data, large_data):
+    def __init__(self, local_data, large_data, variables):
         
+        self.variables = variables  # Store selected variables
+
         self.local_data = local_data
         self.large_data = large_data
 
         self._test_coherence()
+        
         
     def _test_coherence(self):
         """
@@ -65,11 +68,12 @@ class CombinedDataset(torch.utils.data.Dataset):
         """
         for t in ["day", "month", "year"]: 
             for v in ["ds_g200", "ds_g500", "ds_psl"]:
-                _times1 = getattr(self.local_data.ds.time.dt, t).values
-                _times2 = getattr(self.large_data, v).time.dt
-                _times2 = getattr(_times2, t).values
-                
-                assert (_times1 == _times2).all(), f"Time values do not match for {t} in {v}"
+                if v.split('_')[1] in self.variables:
+                    _times1 = getattr(self.local_data.ds.time.dt, t).values
+                    _times2 = getattr(self.large_data, v).time.dt
+                    _times2 = getattr(_times2, t).values
+                            
+                    assert (_times1 == _times2).all(), f"Time values do not match for {t} in {v}"
         
     def __len__(self):
         return len(self.local_data.labels)
@@ -85,7 +89,7 @@ class CombinedDataset(torch.utils.data.Dataset):
 # --------------------------------------------------------------------------------------------------------------------
 # Large-Scale dataset -------------------------------------------------------------------------------------------------
 
-class ERA5Dataset_extremes(Dataset):
+class LargeScale_Dataset_extremes(Dataset):
     def __init__(self, file_g500, file_g200, file_psl, start_date, end_date, months, start_lag, lags_era5, variables, transform=None):
         """
         Args:
@@ -187,7 +191,7 @@ class Dataset_count_observational_TX(Dataset):
 # ------------------------------------------------------------------------------------------------------------------------------
 # Dataset for ERA5Land including CO2 concentration and lagged soil moisture averaged in time
 
-class ERA5LandDataset_extremes_location_swvl_averaged_including_CO2(Dataset):
+class LocalScale_Dataset_extremes_location_swvl_averaged_including_CO2(Dataset):
     """Custom Dataset for ERA5 Land Data (Single Point)."""
 
     def __init__(self, file_path, file_CO2, start_date, end_date, months, variables, scaler=None):
@@ -255,7 +259,7 @@ class ERA5LandDataset_extremes_location_swvl_averaged_including_CO2(Dataset):
 # -----------------------------------------------------------------------------------------------------------------------------
 # Dataset for ERA5Land including CO2 concentration and spei/spi index
 
-class ERA5LandDataset_extremes_location_spei(Dataset):
+class SPEI_extremes_location_dataset(Dataset):
     """Custom Dataset for ERA5 Land Data (Single Point). Uses spei/spi results, CO2 concentration, and extreme classification labels. 
     There is no need for lagged features in the case of using spei or spi since its itself a lagged variable, because it is calculated based 
     on the previous months' precipitation and temperature data (temeprature if spei is computed).

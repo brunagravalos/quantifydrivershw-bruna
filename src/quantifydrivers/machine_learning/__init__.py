@@ -6,7 +6,7 @@ __all__ = [
     "custom_datasets"
 ]
 
-from .custom_datasets import ERA5LandDataset_extremes_location_swvl_averaged_including_CO2, ERA5Dataset_extremes, ERA5LandDataset_extremes_location_spei
+from .custom_datasets import LocalScale_Dataset_extremes_location_swvl_averaged_including_CO2, LargeScale_Dataset_extremes, SPEI_extremes_location_dataset, CombinedDataset
 
 from .models import CombinedModel, ToCombineExtremeClassifier
 

@@ -10,7 +10,6 @@ import pandas as pd
 import torch
 import xarray as xr
 import numpy as np
-from skimage import io, transform
 import random
 import matplotlib.pyplot as plt
 from torchvision import transforms, utils
@@ -32,7 +31,6 @@ import argparse
 
 import machine_learning
 from machine_learning import convnext_functions
-from machine_learning import ERA5LandDataset_extremes_location_spei
 
 
 # ======================================================================================================
@@ -189,9 +187,9 @@ for site in sites:
 
     #File paths ERA5 data -------------------------------------------------------------------------------------------
             
-    file_g500 = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/std_changed_g500_1x1_lagged_standarized_anomalies.nc"
-    file_g200 = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/std_changed_g200_1x1_lagged_standarized_anomalies.nc"
-    file_psl = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/std_changed_psl_1x1_lagged_standarized_anomalies.nc"
+    file_g500 = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/g500_1x1_lagged_standarized_anomalies.nc"
+    file_g200 = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/g200_1x1_lagged_standarized_anomalies.nc"
+    file_psl = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/psl_1x1_lagged_standarized_anomalies.nc"
 
     # File local scale data and extreme classification ------------------------------------------------
     file_local_scale = f"/gpfs/scratch/bsc32/bsc167965/data/era5_land/lagged_anomalies_and_event_detection/{percentile_to_load}_{site}_lagged_standarized_anomalies_and_extreme_detection.nc"
@@ -260,13 +258,13 @@ for site in sites:
     
     # Datasets ERA5land data --------------------------------------------------------------
     
-    train_dataset = machine_learning.ERA5LandDataset_extremes_location_swvl_averaged_including_CO2(file_path=file_local_scale, file_CO2=file_CO2 , **_ERA5LAND_TRAIN_DATASET_CONF)
-    test_dataset = machine_learning.ERA5LandDataset_extremes_location_swvl_averaged_including_CO2(file_path=file_local_scale, file_CO2=file_CO2 , **_ERA5LAND_TEST_DATASET_CONF)
+    train_dataset = machine_learning.LocalScale_Dataset_extremes_location_swvl_averaged_including_CO2(file_path=file_local_scale, file_CO2=file_CO2 , **_ERA5LAND_TRAIN_DATASET_CONF)
+    test_dataset = machine_learning.LocalScale_Dataset_extremes_location_swvl_averaged_including_CO2(file_path=file_local_scale, file_CO2=file_CO2 , **_ERA5LAND_TEST_DATASET_CONF)
     
     # Datasets ERA5 data ------------------------------------------------------------------
 
-    train_features_era5 = machine_learning.ERA5Dataset_extremes(file_g500,file_g200,file_psl, **_ERA5_TRAIN_DATASET_CONF) # shape: features, time, lat, lon 
-    test_features_era5 = machine_learning.ERA5Dataset_extremes(file_g500,file_g200,file_psl, **_ERA5_TEST_DATASET_CONF)
+    train_features_era5 = machine_learning.LargeScale_Dataset_extremes(file_g500,file_g200,file_psl, **_ERA5_TRAIN_DATASET_CONF) # shape: features, time, lat, lon 
+    test_features_era5 = machine_learning.LargeScale_Dataset_extremes(file_g500,file_g200,file_psl, **_ERA5_TEST_DATASET_CONF)
     
     # =========================================================================================
     # Dataloaders configuration dictionaries --------------------------------------------------
