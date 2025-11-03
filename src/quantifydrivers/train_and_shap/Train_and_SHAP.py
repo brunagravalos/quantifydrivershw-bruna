@@ -189,12 +189,12 @@ for site in sites:
 
     #File paths ERA5 data -------------------------------------------------------------------------------------------
             
-    file_g500 = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/std_changed_g500_1x1_lagged_standarized_anomalies.nc"
-    file_g200 = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/std_changed_g200_1x1_lagged_standarized_anomalies.nc"
-    file_psl = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/std_changed_psl_1x1_lagged_standarized_anomalies.nc"
+    file_g500 = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/std_changed_g500_1x1_lagged_standarized_anomalies.nc"
+    file_g200 = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/std_changed_g200_1x1_lagged_standarized_anomalies.nc"
+    file_psl = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/std_changed_psl_1x1_lagged_standarized_anomalies.nc"
 
     # File local scale data and extreme classification ------------------------------------------------
-    file_local_scale = f"/gpfs/scratch/bsc32/bsc167965/tfm_data/era5_land/lagged_anomalies_and_event_detection/{percentile_to_load}_{site}_lagged_standarized_anomalies_and_extreme_detection.nc"
+    file_local_scale = f"/gpfs/scratch/bsc32/bsc167965/data/era5_land/lagged_anomalies_and_event_detection/{percentile_to_load}_{site}_lagged_standarized_anomalies_and_extreme_detection.nc"
     
     # File CO2 data 
     file_CO2 = "/home/bsc/bsc167965/TFM/ML/data_files/daily_co2_JJA.nc"
@@ -427,7 +427,7 @@ for site in sites:
     model = machine_learning.CombinedModel(NN_model_loaded, CNN_model_loaded, nn_hidden_dim=8, cnn_hidden_dim=16,output_dim=2).to(device)
     reset_seeds(seed)
     # Load the trained CombinedModel weights ----------------------------------------------------------------------------------------------
-    model_state_dict = torch.load(f"/gpfs/scratch/bsc32/bsc167965/tfm_data/test_train_n_shap_dilation/{site}/trained_models/member_{seed}_{name_save_CombinedModel}_{site}_test_2.pth")
+    model_state_dict = torch.load(f"/gpfs/scratch/bsc32/bsc167965/data/test_train_n_shap_dilation/{site}/trained_models/member_{seed}_{name_save_CombinedModel}_{site}_test_2.pth")
     model.load_state_dict(model_state_dict)
     model.eval()
 

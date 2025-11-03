@@ -44,7 +44,7 @@ for site in sites:
     for var_name, var_name_file in zip(variables, variables_file):
         
         if var_name == "tasmax":
-            file_path = f"/gpfs/scratch/bsc32/bsc167965/tfm_data/era5_land/variables_era5land_data_{site}_1950_2024.nc"
+            file_path = f"/gpfs/scratch/bsc32/bsc167965/data/era5_land/variables_era5land_data_{site}_1950_2024.nc"
             ds = xr.open_dataset(file_path)
         else:
             file_path = os.path.join(input_directory, f"era5land_{var_name_file}_data_{site}_1950_2024.nc")

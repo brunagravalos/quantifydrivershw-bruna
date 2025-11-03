@@ -64,12 +64,12 @@ check_seeds()
 #===================================================================================================================================
 
 #File paths ERA5 data -----------------------------------------------------------------------------------------------------------------------------------------------------
-file_g500 = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/std_changed_g500_1x1_lagged_standarized_anomalies.nc"
-file_g200 = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/std_changed_g200_1x1_lagged_standarized_anomalies.nc"
-file_psl = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/std_changed_psl_1x1_lagged_standarized_anomalies.nc"
+file_g500 = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/std_changed_g500_1x1_lagged_standarized_anomalies.nc"
+file_g200 = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/std_changed_g200_1x1_lagged_standarized_anomalies.nc"
+file_psl = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/std_changed_psl_1x1_lagged_standarized_anomalies.nc"
 
 # File local scale data and extreme classification ------------------------------------------------
-file_local_scale = f"/gpfs/scratch/bsc32/bsc167965/tfm_data/era5_land/obs_lagged_anomalies_and_event_detection/obs_{site}_lagged_standarized_anomalies_and_extreme_detection.nc"
+file_local_scale = f"/gpfs/scratch/bsc32/bsc167965/data/era5_land/obs_lagged_anomalies_and_event_detection/obs_{site}_lagged_standarized_anomalies_and_extreme_detection.nc"
     
 # File CO2 data 
 file_CO2 = "/home/bsc/bsc167965/TFM/ML/data_files/daily_co2_JJA.nc"
@@ -319,7 +319,7 @@ for site in sites:
     
     spei_variables = spei_spi_variable_mapping[spei_spi] 
 
-    train_dataset = ERA5LandDataset_extremes_location_spei(file_path=f"/gpfs/scratch/bsc32/bsc167965/tfm_data/era5_land/lagged_anomalies_and_event_detection/{percentile_to_load}_{site}_lagged_standarized_anomalies_and_extreme_detection.nc", file_CO2=file_CO2 , files_spei = files_spei, **_ERA5LAND_TRAIN_DATASET_CONF, spei_variables = spei_variables, num_lags=7)
+    train_dataset = ERA5LandDataset_extremes_location_spei(file_path=f"/gpfs/scratch/bsc32/bsc167965/data/era5_land/lagged_anomalies_and_event_detection/{percentile_to_load}_{site}_lagged_standarized_anomalies_and_extreme_detection.nc", file_CO2=file_CO2 , files_spei = files_spei, **_ERA5LAND_TRAIN_DATASET_CONF, spei_variables = spei_variables, num_lags=7)
     
     combined_train_dataset = machine_learning.CombinedDataset(train_dataset, train_features_era5,variables = ['g500', 'g200', 'psl'] )
     

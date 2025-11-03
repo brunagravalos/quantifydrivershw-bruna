@@ -207,12 +207,12 @@ for site in sites:
             
     #File paths ERA5 data --------------------------------------------------------------------------------------
             
-    file_g500 = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/std_changed_g500_1x1_lagged_standarized_anomalies.nc"
-    file_g200 = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/std_changed_g200_1x1_lagged_standarized_anomalies.nc"
-    file_psl = "/gpfs/scratch/bsc32/bsc167965/tfm_data/era5/lagged_anomalies/std_changed_psl_1x1_lagged_standarized_anomalies.nc"
+    file_g500 = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/std_changed_g500_1x1_lagged_standarized_anomalies.nc"
+    file_g200 = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/std_changed_g200_1x1_lagged_standarized_anomalies.nc"
+    file_psl = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/std_changed_psl_1x1_lagged_standarized_anomalies.nc"
 
     # File local scale data and extreme classification ------------------------------------------------
-    file_local_scale = f"/gpfs/scratch/bsc32/bsc167965/tfm_data/era5_land/obs_lagged_anomalies_and_event_detection/obs_{site}_lagged_standarized_anomalies_and_extreme_detection.nc"
+    file_local_scale = f"/gpfs/scratch/bsc32/bsc167965/data/era5_land/obs_lagged_anomalies_and_event_detection/obs_{site}_lagged_standarized_anomalies_and_extreme_detection.nc"
     
     # File CO2 data --------------------------------------------------------------------------------------
     file_CO2 = "/home/bsc/bsc167965/TFM/ML/data_files/daily_co2_JJA.nc"

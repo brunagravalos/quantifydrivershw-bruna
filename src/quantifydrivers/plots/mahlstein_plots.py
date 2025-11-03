@@ -35,7 +35,7 @@ variable = 'tasmax'
 
 for site,site_label in zip(sites,sites_labels): 
 
-    #path = f'/gpfs/scratch/bsc32/bsc167965/tfm_data/era5_land/variables_era5land_data_{site}_1950_2024.nc'
+    #path = f'/gpfs/scratch/bsc32/bsc167965/data/era5_land/variables_era5land_data_{site}_1950_2024.nc'
     #ds_swvl = xr.open_dataset(path)  
     path =  f'/your/path/to/data/data_{site}.nc'
     ds = xr.open_dataset(path)
