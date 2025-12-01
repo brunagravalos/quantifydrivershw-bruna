@@ -33,6 +33,9 @@ import os
 import importlib.resources as pkg_resources
 import yaml
 
+from data_loading import load_datasets_and_loaders
+
+
 print("--- DIAGNOSTICS START ---")
 
 # 1. Get and print the current working directory
@@ -181,10 +184,6 @@ def load_hypms_from_file(site_name, percentile='90p', base_path='/home/bsc/bsc16
                     continue
 
     return hypms
-
-
-import os
-
 
 import os
 
@@ -421,11 +420,14 @@ train_subset_combined, val_subset_combined = random_split(combined_train_dataset
                                                           [train_size_combined, val_size_combined], generator=g)
 
 # (local,regional,labels)
+
 combined_train_loader = DataLoader(train_subset_combined, **_DATALOADERS_CONF)
 combined_val_loader = DataLoader(val_subset_combined, **_DATALOADERS_CONF)
 combined_test_loader = DataLoader(combined_test_dataset, **_DATALOADERS_TEST_CONF)
 
 #  Weights class imbalance  ---------------------------------------------------------------------------------
+
+###############################################      UNTIL HERE WE ARA DATA LOADING#################################################
 
 unique_classes, class_counts = np.unique(train_dataset.labels, return_counts=True)
 total_counts = sum(class_counts)
