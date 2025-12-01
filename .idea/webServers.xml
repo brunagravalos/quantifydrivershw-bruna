@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="115483ef-3ca7-401e-8bae-f8c2448d7e97" name="mn5_t1">
+        <fileTransfer rootFolder="/gpfs/scratch/bsc32/bsc214253" accessType="SFTP" host="transfer1.bsc.es" port="22" sshConfigId="8b8de98c-da4f-46ae-a2d2-146fc504cdc9" sshConfig="mn5t1" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+      <webServer id="1e1ada52-94b2-4f08-96b4-ce527b0afe04" name="mn5_t2">
+        <fileTransfer rootFolder="/gpfs/scratch/bsc32/bsc214253" accessType="SFTP" host="transfer2.bsc.es" port="22" sshConfigId="66979002-02ba-487e-916e-5d7359dd8556" sshConfig="bsc214253@transfer2.bsc.es:22 key" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

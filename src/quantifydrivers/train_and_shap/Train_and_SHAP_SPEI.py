@@ -214,7 +214,7 @@ for site in sites:
     file_local_scale = f"/gpfs/scratch/bsc32/bsc167965/data/era5_land/obs_lagged_anomalies_and_event_detection/obs_{site}_lagged_standarized_anomalies_and_extreme_detection.nc"
     
     # File CO2 data --------------------------------------------------------------------------------------
-    file_CO2 = "/home/bsc/bsc167965/TFM/ML/data_files/daily_co2_JJA.nc"
+    file_CO2 = "/gpfs/scratch/bsc32/bsc167965/data/daily_co2_JJA.nc"
 
     if spei_spi == 'spi':
         files_spei =[f"/path/to/data/spi_data.nc"
@@ -431,11 +431,11 @@ for site in sites:
         }
     
     
-    main_path = '/your/path/to/save/results' 
+    main_path = '/gpfs/scratch/bsc32/bsc214253/results/'
     
-    #with open(os.path.join(main_path, f'{site}/1lag_{distribution}_daily_{spei_spi}_{percentile_to_load}_results_data_{seed}.pkl'), 'wb') as f:
-    #    pickle.dump(seed_results, f)
-    #    print(f"saved file results {seed}")
+    with open(os.path.join(main_path, f'{site}/1lag_{distribution}_daily_{spei_spi}_{percentile_to_load}_results_data_{seed}.pkl'), 'wb') as f:
+        pickle.dump(seed_results, f)
+        print(f"saved file results {seed}")
     
     print("Finished training model, computing SHAP")
     
@@ -462,7 +462,7 @@ for site in sites:
     model = machine_learning.CombinedModel(nn_model_loaded, cnn_model_loaded, nn_hidden_dim=8, cnn_hidden_dim=16,output_dim=2).to(device)
     reset_seeds(seed)
     # Load the trained CombinedModel weights ----------------------------------------------------------------------------------------------
-    model_state_dict = torch.load(f"/your/path/to/save/weights/model/file_name.pth")
+    model_state_dict = torch.load(f"/gpfs/scratch/bsc32/bsc214253/results/results.pth")
     model.load_state_dict(model_state_dict)
     model.eval()
 

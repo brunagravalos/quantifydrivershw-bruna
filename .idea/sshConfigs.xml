@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SshConfigs">
+    <configs>
+      <sshConfig host="transfer1.bsc.es" id="8b8de98c-da4f-46ae-a2d2-146fc504cdc9" keyPath="$PROJECT_DIR$/../.ssh/id_rsa" port="22" customName="mn5t1" nameFormat="CUSTOM" username="bsc214253" useOpenSSHConfig="true">
+        <option name="customName" value="mn5t1" />
+      </sshConfig>
+      <sshConfig host="transfer2.bsc.es" id="66979002-02ba-487e-916e-5d7359dd8556" keyPath="$PROJECT_DIR$/../.ssh/id_rsa" port="22" nameFormat="DESCRIPTIVE" username="bsc214253" useOpenSSHConfig="true" />
+    </configs>
+  </component>
+</project>
