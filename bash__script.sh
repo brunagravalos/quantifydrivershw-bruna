@@ -10,7 +10,7 @@
 #SBATCH --output=process_%j.out
 #SBATCH --error=process_%j.err
 
-SCRIPT_PATH="/gpfs/scratch/bsc32/bsc214253/quantifydrivershw/src/quantifydrivers/train_and_shap/train_and_SHAP_conf.py"
+SCRIPT_PATH="/gpfs/scratch/bsc32/bsc214253/quantifydrivershw/src/quantifydrivers/train_and_shap/train_and_SHAP_modularized2.py"
 CONTAINER_PATH="/gpfs/scratch/bsc32/bsc167965/environments/pangeo_pytorch-202502"
 BIND_PATH="/gpfs/scratch/bsc32/bsc167965/"
 

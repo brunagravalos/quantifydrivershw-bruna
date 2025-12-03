@@ -239,17 +239,6 @@ print(f"Loaded hyperparameters for {SITE}: {SITE_HYPMS[SITE]}")
 print(f"Doing site: {SITE}")
 print(f"*** Setting up file paths for site: {SITE} ***") # NEW PRINT
 
-# File paths ERA5 data -------------------------------------------------------------------------------------------
-
-file_g500 = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/g500_1x1_lagged_standarized_anomalies.nc"
-file_g200 = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/g200_1x1_lagged_standarized_anomalies.nc"
-file_psl = "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/psl_1x1_lagged_standarized_anomalies.nc"
-
-# File local scale data and extreme classification ------------------------------------------------
-file_local_scale = f"/gpfs/scratch/bsc32/bsc167965/data/era5land/lagged_anomalies_and_event_detection/{percentile_to_load}_{SITE}_lagged_standarized_anomalies_and_extreme_detection.nc"
-
-# File CO2 data
-file_CO2 = "/gpfs/scratch/bsc32/bsc167965/data/daily_co2_JJA.nc"
 
 # =================================================================================================================
 # Dataset, Dataloaders and hyperparameter configuration ----------------------------------------------------------------------------------------------------------------------------
@@ -260,74 +249,6 @@ HYPMS = dict(
     lr=SITE_HYPMS[SITE]['lr'],
     w_decay=SITE_HYPMS[SITE]['w_decay'],
 )
-
-# Datasets configuration dictionaries --------------------------------------------------
-
-# Start date for all datasets
-start_date = "1950-01-01"
-# Variables large-scale and local scale to use
-variables_era5 = ['g500', 'g200', 'psl']
-variables_era5land = ['swvl1', 'swvl2', 'swvl3']
-
-# Local-scale datasets configuration
-_ERA5LAND_TRAIN_DATASET_CONF = dict(
-    start_date=start_date,
-    end_date="2013-12-31",
-    months=[6, 7, 8],
-    variables=variables_era5land
-)
-
-_ERA5LAND_TEST_DATASET_CONF = dict(
-    start_date="2014-01-01",
-    end_date="2023-12-31",
-    months=[6, 7, 8],
-    variables=variables_era5land
-)
-
-# Large-scale datasets configuration
-_ERA5_TRAIN_DATASET_CONF = dict(
-    start_date=start_date,
-    end_date="2013-12-31",
-    months=[6, 7, 8],
-    start_lag=1,
-    lags_era5=1,
-    variables=variables_era5
-)
-
-_ERA5_TEST_DATASET_CONF = dict(
-    start_date="2014-01-01",
-    end_date="2023-12-31",
-    months=[6, 7, 8],
-    start_lag=1,
-    lags_era5=1,
-    variables=variables_era5
-)
-
-# Number of lags large-scale fields
-number_lags = _ERA5_TEST_DATASET_CONF['variables']
-
-# Name to save the trained CombinedModel
-name_save_CombinedModel = f"CO2_Combinedmodel_trained_with_cnn_nn_trained_together_{number_lags}lags"
-
-# Datasets ERA5land data --------------------------------------------------------------
-print("*** Initializing ERA5Land (Local) Train Dataset ***") # NEW PRINT
-train_dataset = machine_learning.LocalScale_Dataset_extremes_location_swvl_averaged_including_CO2(
-    file_path=file_local_scale, file_CO2=file_CO2, **_ERA5LAND_TRAIN_DATASET_CONF)
-print(f"*** Train Dataset size: {len(train_dataset)} ***") # NEW PRINT
-test_dataset = machine_learning.LocalScale_Dataset_extremes_location_swvl_averaged_including_CO2(
-    file_path=file_local_scale, file_CO2=file_CO2, **_ERA5LAND_TEST_DATASET_CONF)
-
-# Datasets ERA5 data ------------------------------------------------------------------
-print("*** Initializing ERA5 (Large-Scale) Train/Test Datasets ***") # NEW PRINT
-train_features_era5 = machine_learning.LargeScale_Dataset_extremes(file_g500, file_g200, file_psl,
-                                                                   **_ERA5_TRAIN_DATASET_CONF)  # shape: features, time, lat, lon
-test_features_era5 = machine_learning.LargeScale_Dataset_extremes(file_g500, file_g200, file_psl,
-                                                                  **_ERA5_TEST_DATASET_CONF)
-print(f"*** Large-Scale Train features shape: {train_features_era5.all_features} ***") # NEW PRINT
-
-# =========================================================================================
-# Dataloaders configuration dictionaries --------------------------------------------------
-# =========================================================================================
 
 g = torch.Generator()
 reset_seeds(seed)
@@ -347,32 +268,31 @@ _DATALOADERS_TEST_CONF = dict(
     num_workers=0
 )
 
-# =========================================================================================
-
-# Combined Dataset and Dataloader
-print("*** Creating Combined Datasets ***") # NEW PRINT
-
 batch_size = _DATALOADERS_CONF['batch_size']  # batch size for dataloaders both datasets
 
-combined_train_dataset = machine_learning.CombinedDataset(train_dataset, train_features_era5,
-                                                          variables=variables_era5)
-combined_test_dataset = machine_learning.CombinedDataset(test_dataset, test_features_era5, variables=variables_era5)
+from data_loading2 import build_datasets_and_loaders
 
-# Split train and validation sets for the combined dataset ------------------------------------------------
-train_size_combined = int(0.8 * len(combined_train_dataset))
-val_size_combined = len(combined_train_dataset) - train_size_combined
-print(f"*** Combined Train size: {len(combined_train_dataset)}. Splitting into Train ({train_size_combined}) and Validation ({val_size_combined}) ***") # NEW PRINT
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+CONF_PATH = os.path.join(SCRIPT_DIR, "configuration.yaml")
+
+datasets = build_datasets_and_loaders(
+    config_path=CONF_PATH,
+    dataloader_conf=_DATALOADERS_CONF,
+    dataloader_test_conf=_DATALOADERS_TEST_CONF,
+    seed=seed)
+
+train_dataset = datasets["train_dataset"]
+test_dataset = datasets["test_dataset"]
+train_features_era5 = datasets["train_era5"]
+test_features_era5 = datasets["test_era5"]
+train_subset_combined = datasets["train_subset"]
+
+combined_train_loader = datasets["train_loader"]
+combined_val_loader   = datasets["val_loader"]
+combined_test_loader  = datasets["test_loader"]
+combined_test_dataset = datasets["combined_test"]
 
 
-# random split
-train_subset_combined, val_subset_combined = random_split(combined_train_dataset,
-                                                          [train_size_combined, val_size_combined], generator=g)
-
-# (local,regional,labels)
-combined_train_loader = DataLoader(train_subset_combined, **_DATALOADERS_CONF)
-combined_val_loader = DataLoader(val_subset_combined, **_DATALOADERS_CONF)
-combined_test_loader = DataLoader(combined_test_dataset, **_DATALOADERS_TEST_CONF)
-print("*** DataLoaders created successfully. ***") # NEW PRINT
 
 #  Weights class imbalance  ---------------------------------------------------------------------------------
 print("*** Calculating Class Weights ***") # NEW PRINT
