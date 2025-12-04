@@ -253,22 +253,8 @@ HYPMS = dict(
 g = torch.Generator()
 reset_seeds(seed)
 
-_DATALOADERS_CONF = dict(
-    batch_size=SITE_HYPMS[SITE]['batch_size'],
-    drop_last=False,
-    shuffle=True,
-    num_workers=0,
-    generator=g
-)
 
-_DATALOADERS_TEST_CONF = dict(
-    batch_size=SITE_HYPMS[SITE]['batch_size'],
-    drop_last=False,
-    shuffle=False,
-    num_workers=0
-)
-
-batch_size = _DATALOADERS_CONF['batch_size']  # batch size for dataloaders both datasets
+batch_size = 32
 
 from data_loading2 import build_datasets_and_loaders
 
@@ -277,9 +263,7 @@ CONF_PATH = os.path.join(SCRIPT_DIR, "configuration.yaml")
 
 datasets = build_datasets_and_loaders(
     config_path=CONF_PATH,
-    dataloader_conf=_DATALOADERS_CONF,
-    dataloader_test_conf=_DATALOADERS_TEST_CONF,
-    seed=seed)
+    seed=seed,generator=g)
 
 train_dataset = datasets["train_dataset"]
 test_dataset = datasets["test_dataset"]
@@ -292,6 +276,10 @@ combined_val_loader   = datasets["val_loader"]
 combined_test_loader  = datasets["test_loader"]
 combined_test_dataset = datasets["combined_test"]
 
+number_lags = ['g500', 'g200', 'psl']
+
+# Name to save the trained CombinedModel
+name_save_CombinedModel = f"CO2_Combinedmodel_trained_with_cnn_nn_trained_together_{number_lags}lags"
 
 
 #  Weights class imbalance  ---------------------------------------------------------------------------------

@@ -361,7 +361,7 @@ combined_test_dataset = machine_learning.CombinedDataset(test_dataset, test_feat
 # Split train and validation sets for the combined dataset ------------------------------------------------
 train_size_combined = int(0.8 * len(combined_train_dataset))
 val_size_combined = len(combined_train_dataset) - train_size_combined
-print(f"*** Combined Train size: {len(combined_train_dataset)}. Splitting into Train ({train_size_combined}) and Validation ({val_size_combined}) ***") # NEW PRINT
+print(f"*** Combined Train size: {len(combined_train_dataset)}but . Splitting into Train ({train_size_combined}) and Validation ({val_size_combined}) ***") # NEW PRINT
 
 
 # random split
