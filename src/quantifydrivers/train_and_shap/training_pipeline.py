@@ -89,9 +89,10 @@ def load_hypms_from_file(site_name, percentile='90p', base_path='/home/bsc/bsc16
 
 
 
-def training(config_path,datasets, seed, device, generator):
-    with open(config_path, "r") as f:
-        CONF = yaml.safe_load(f)
+def training(configuration,datasets, seed, device, generator):
+
+    seed = configuration["SEED"]
+
 
     g = generator
     SITE_HYPMS_fixed = {
@@ -115,13 +116,13 @@ def training(config_path,datasets, seed, device, generator):
     percentile_to_load = '90p'
 
     print(f"Loading hyperparameters for percentile: {percentile_to_load}")
-    params = load_hypms_from_file(CONF["SITE"], percentile=percentile_to_load, file_name="file_with_hypms.txt")
+    params = load_hypms_from_file(configuration["SITE"], percentile=percentile_to_load, file_name="file_with_hypms.txt")
     if params:
-        SITE_HYPMS[CONF["SITE"]] = params
-    print(f"Loaded hyperparameters for {CONF["SITE"]}: {SITE_HYPMS[CONF["SITE"]]}")
+        SITE_HYPMS[configuration["SITE"]] = params
+    print(f"Loaded hyperparameters for {configuration["SITE"]}: {SITE_HYPMS[configuration["SITE"]]}")
 
-    print(f"Doing site: {CONF["SITE"]}")
-    print(f"*** Setting up file paths for site: {CONF["SITE"]} ***")  # NEW PRINT
+    print(f"Doing site: {configuration["SITE"]}")
+    print(f"*** Setting up file paths for site: {configuration["SITE"]} ***")  # NEW PRINT
 
     # =================================================================================================================
     # Dataset, Dataloaders and hyperparameter configuration ----------------------------------------------------------------------------------------------------------------------------
@@ -129,8 +130,8 @@ def training(config_path,datasets, seed, device, generator):
 
     HYPMS = dict(
         epochs=75,
-        lr=SITE_HYPMS[CONF["SITE"]]['lr'],
-        w_decay=SITE_HYPMS[CONF["SITE"]]['w_decay'],
+        lr=SITE_HYPMS[configuration["SITE"]]['lr'],
+        w_decay=SITE_HYPMS[configuration["SITE"]]['w_decay'],
     )
 
     train_dataset = datasets["train_dataset"]
@@ -149,7 +150,7 @@ def training(config_path,datasets, seed, device, generator):
 
     base_minority_weight = class_counts[0] / class_counts[1]
 
-    minority_weight_multiplier = SITE_HYPMS[CONF["SITE"]]['minority_weight_multiplier']
+    minority_weight_multiplier = SITE_HYPMS[configuration["SITE"]]['minority_weight_multiplier']
     final_minority_weight = base_minority_weight * minority_weight_multiplier
     class_weights = torch.tensor([1.0, final_minority_weight], dtype=torch.float).to(device)
     smoothed_weights = torch.sqrt(class_weights).to(device)  # smoothing the weights
@@ -161,11 +162,19 @@ def training(config_path,datasets, seed, device, generator):
     # Final training of the combined model -------------------------------------------------------------------------------------------------------------------------------------------------
     print("*** Initializing Models (NN and CNN) ***")  # NEW PRINT
 
+    print("seed: ", seed, " CONF seed: ", configuration["SEED"])
+
     reset_seeds(g,seed)
+    print("seed: ", seed, " CONF seed: ", configuration["SEED"])
+
     # MLP for local-scale
     NN_model = machine_learning.ToCombineExtremeClassifier(input_dim=len(train_dataset.all_features),
                                                            train_alone_NN=False, num_classes=2).to(device)
+    print("seed: ", seed, " CONF seed: ", configuration["SEED"])
+
     reset_seeds(g,seed)
+    print("seed: ", seed, " CONF seed: ", configuration["SEED"])
+
     # ConvNext for large-scale
     CNN_model_loaded = convnext_functions.ConvNext(
         num_channels=len(train_features_era5.all_features),
@@ -176,7 +185,11 @@ def training(config_path,datasets, seed, device, generator):
         drop_rate=0.05,
         train_alone=False,
     ).to(device)
+    print("seed: ", seed, " CONF seed: ", configuration["SEED"])
+
     reset_seeds(g,seed)
+    print("seed: ", seed, " CONF seed: ", configuration["SEED"])
+
 
     # Combined model
     model = machine_learning.CombinedModel(NN_model, CNN_model_loaded, nn_hidden_dim=8, cnn_hidden_dim=16,output_dim=2).to(device)
@@ -187,7 +200,11 @@ def training(config_path,datasets, seed, device, generator):
     # Train phase Combined model -------------------------------------------------------------------------------------------------------------
     # =======================================================================================================================================
 
+    print("seed: ", seed, " CONF seed: ", configuration["SEED"])
+
     reset_seeds(g,seed)
+    print("seed: ", seed, " CONF seed: ", configuration["SEED"])
+
     # Optimizer
     optimizer_combined = optim.AdamW(model.parameters(), lr=HYPMS['lr'], weight_decay=HYPMS['w_decay'])
     # Scheduler (if wanted)
@@ -214,14 +231,14 @@ def training(config_path,datasets, seed, device, generator):
     # SAVE MODEL
     # ---------------------------
 
-    number_lags = CONF["dataset_config"]["variables_era5"]
+    number_lags = configuration["dataset_config"]["variables_era5"]
     model_name = f"CO2_Combinedmodel_trained_with_cnn_nn_trained_together_{number_lags}lags"
-    model_dir = CONF["paths"]["model_dir"]
+    model_dir = configuration["paths"]["model_dir"]
     save_path = os.path.join(
         model_dir,
-        CONF["SITE"],
+        configuration["SITE"],
         "trained_models",
-        f"member_{seed}_{model_name}_{CONF["SITE"]}_test_2.pth"
+        f"member_{seed}_{model_name}_{configuration["SITE"]}_test_2.pth"
     )
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     torch.save(model.state_dict(), save_path)

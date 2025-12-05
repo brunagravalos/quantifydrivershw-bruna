@@ -136,14 +136,21 @@ g = torch.Generator()
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 CONF_PATH = os.path.join(SCRIPT_DIR, "configuration.yaml")
 
+print("seed: ",seed, " CONF seed: ",CONF["SEED"])
 from data_loading2 import build_datasets_and_loaders
-datasets = build_datasets_and_loaders(CONF=CONF,seed=seed,generator=g)
+datasets = build_datasets_and_loaders(configuration=CONF,seed=seed,generator=g)
+
+print("seed: ",seed, " CONF seed: ",CONF["SEED"])
 
 from training_pipeline import training
-model, CNN_model_loaded, NN_model, losses_train_combined, losses_val_combined = training(CONF_PATH,datasets,seed,device,g)
+model, CNN_model_loaded, NN_model, losses_train_combined, losses_val_combined = training(configuration=CONF,datasets=datasets,seed=seed,device=device,generator=g)
+
+print("seed: ",seed, " CONF seed: ",CONF["SEED"])
 
 from evaluation_pipeline import evaluation
-evaluation(CONF_PATH,datasets, seed, g, losses_train_combined, losses_val_combined, model,CNN_model_loaded, NN_model)
+evaluation(configuration=CONF,datasets=datasets,seed=seed,generator=g,losses_train_combined=losses_train_combined,losses_val_combined=losses_val_combined,model=model,CNN_model_loaded=CNN_model_loaded,NN_model=NN_model)
+
+print("seed: ",seed, " CONF seed: ",CONF["SEED"])
 
 from SHAP_computing_pipeline import compute_SHAP
-compute_SHAP(CONF_PATH,datasets, seed, g, device)
+compute_SHAP(configuration=CONF,datasets=datasets, seed=seed, generator=g, device=device)

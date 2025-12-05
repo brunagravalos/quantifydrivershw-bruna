@@ -20,11 +20,9 @@ def reset_seeds(g,seed=42):
 
 
 
-def evaluation(config_path,datasets, seed, generator, losses_train_combined, losses_val_combined, model,CNN_model_loaded, NN_model):
+def evaluation(configuration, datasets, seed, generator, losses_train_combined, losses_val_combined, model,CNN_model_loaded, NN_model):
     print("*** Starting Evaluation Phase on Test Data ***")  # NEW PRINT
-
-    with open(config_path, "r") as f:
-        CONF = yaml.safe_load(f)
+    seed = configuration["SEED"]
 
     g = generator
     # ==============================================================================================================
@@ -32,7 +30,12 @@ def evaluation(config_path,datasets, seed, generator, losses_train_combined, los
     percentile_to_load = '90p'
 
     combined_test_loader = datasets["test_loader"]
+    print("seed: ", seed, " CONF seed: ", configuration["SEED"])
+
     reset_seeds(g,seed)
+
+    print("seed: ", seed, " CONF seed: ", configuration["SEED"])
+
     y_true, y_pred, outputs_prob, extreme_acc, nonextreme_acc = machine_learning.evaluate_CombinedModel(
         CombinedModel=model, cnn=CNN_model_loaded, nn=NN_model, test_loader=combined_test_loader,
         print_accuracies=True, train_alone=False)
@@ -50,11 +53,11 @@ def evaluation(config_path,datasets, seed, generator, losses_train_combined, los
     }
 
     # Save results → YAML
-    results_dir = CONF["paths"]["results_dir"]
+    results_dir = configuration["paths"]["results_dir"]
     results_file = os.path.join(
         results_dir,
-        CONF["SITE"],
-        f"{CONF["percentile_to_load"]}_results_data_{seed}.pkl"
+        configuration["SITE"],
+        f"{configuration["percentile_to_load"]}_results_data_{seed}.pkl"
     )
     os.makedirs(os.path.dirname(results_file), exist_ok=True)
 
