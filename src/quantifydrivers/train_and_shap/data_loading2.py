@@ -101,10 +101,6 @@ def load_mock_paths(base_folder: str, site: str, percentile: str):
 
 
 def build_datasets_and_loaders(configuration, seed, generator):
-    print("seed: ", seed, " CONF seed: ", configuration["SEED"])
-
-    seed = configuration["SEED"]
-
     percentile = configuration["percentile_to_load"]
     paths = load_mock_paths(configuration["paths"]["base_folder"], configuration["SITE"], percentile)
 
@@ -161,13 +157,7 @@ def build_datasets_and_loaders(configuration, seed, generator):
 
     print(f"Doing site: {configuration["SITE"]}")
     print(f"*** Setting up file paths for site: {configuration["SITE"]} ***")  # NEW PRINT
-
-    print("seed: ", seed, " CONF seed: ", configuration["SEED"])
-
-    reset_seeds(generator,seed)
-
-    print("seed: ", seed, " CONF seed: ", configuration["SEED"])
-
+    reset_seeds(generator,configuration["SEED"])
     # -------------------------------
     # 1. CREATE LOCAL-SCALE DATASETS
     # -------------------------------

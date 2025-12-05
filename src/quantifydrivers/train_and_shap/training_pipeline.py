@@ -89,11 +89,7 @@ def load_hypms_from_file(site_name, percentile='90p', base_path='/home/bsc/bsc16
 
 
 
-def training(configuration,datasets, seed, device, generator):
-
-    seed = configuration["SEED"]
-
-
+def training(configuration,datasets, device, generator):
     g = generator
     SITE_HYPMS_fixed = {
         'belgrado': {'lr': 1e-4, 'w_decay': 0.01, 'batch_size': 32, 'extreme_weights_ctt': 1,
@@ -162,18 +158,13 @@ def training(configuration,datasets, seed, device, generator):
     # Final training of the combined model -------------------------------------------------------------------------------------------------------------------------------------------------
     print("*** Initializing Models (NN and CNN) ***")  # NEW PRINT
 
-    print("seed: ", seed, " CONF seed: ", configuration["SEED"])
-
-    reset_seeds(g,seed)
-    print("seed: ", seed, " CONF seed: ", configuration["SEED"])
+    reset_seeds(g,configuration["SEED"])
 
     # MLP for local-scale
     NN_model = machine_learning.ToCombineExtremeClassifier(input_dim=len(train_dataset.all_features),
                                                            train_alone_NN=False, num_classes=2).to(device)
-    print("seed: ", seed, " CONF seed: ", configuration["SEED"])
 
-    reset_seeds(g,seed)
-    print("seed: ", seed, " CONF seed: ", configuration["SEED"])
+    reset_seeds(g,configuration["SEED"])
 
     # ConvNext for large-scale
     CNN_model_loaded = convnext_functions.ConvNext(
@@ -185,25 +176,18 @@ def training(configuration,datasets, seed, device, generator):
         drop_rate=0.05,
         train_alone=False,
     ).to(device)
-    print("seed: ", seed, " CONF seed: ", configuration["SEED"])
 
-    reset_seeds(g,seed)
-    print("seed: ", seed, " CONF seed: ", configuration["SEED"])
-
+    reset_seeds(g,configuration["SEED"])
 
     # Combined model
     model = machine_learning.CombinedModel(NN_model, CNN_model_loaded, nn_hidden_dim=8, cnn_hidden_dim=16,output_dim=2).to(device)
-    reset_seeds(g,seed)
+    reset_seeds(g,configuration["SEED"])
     print("*** Combined Model initialized. Starting Training Phase... ***")  # NEW PRINT
 
     # =======================================================================================================================================
     # Train phase Combined model -------------------------------------------------------------------------------------------------------------
     # =======================================================================================================================================
-
-    print("seed: ", seed, " CONF seed: ", configuration["SEED"])
-
-    reset_seeds(g,seed)
-    print("seed: ", seed, " CONF seed: ", configuration["SEED"])
+    reset_seeds(g,configuration["SEED"])
 
     # Optimizer
     optimizer_combined = optim.AdamW(model.parameters(), lr=HYPMS['lr'], weight_decay=HYPMS['w_decay'])
@@ -238,7 +222,7 @@ def training(configuration,datasets, seed, device, generator):
         model_dir,
         configuration["SITE"],
         "trained_models",
-        f"member_{seed}_{model_name}_{configuration["SITE"]}_test_2.pth"
+        f"member_{configuration["SEED"]}_{model_name}_{configuration["SITE"]}_test_2.pth"
     )
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     torch.save(model.state_dict(), save_path)

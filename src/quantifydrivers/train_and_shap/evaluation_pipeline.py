@@ -20,7 +20,7 @@ def reset_seeds(g,seed=42):
 
 
 
-def evaluation(configuration, datasets, seed, generator, losses_train_combined, losses_val_combined, model,CNN_model_loaded, NN_model):
+def evaluation(configuration, datasets, generator, losses_train_combined, losses_val_combined, model,CNN_model_loaded, NN_model):
     print("*** Starting Evaluation Phase on Test Data ***")  # NEW PRINT
     seed = configuration["SEED"]
 
@@ -30,16 +30,11 @@ def evaluation(configuration, datasets, seed, generator, losses_train_combined, 
     percentile_to_load = '90p'
 
     combined_test_loader = datasets["test_loader"]
-    print("seed: ", seed, " CONF seed: ", configuration["SEED"])
-
-    reset_seeds(g,seed)
-
-    print("seed: ", seed, " CONF seed: ", configuration["SEED"])
-
+    reset_seeds(g,configuration["SEED"])
     y_true, y_pred, outputs_prob, extreme_acc, nonextreme_acc = machine_learning.evaluate_CombinedModel(
         CombinedModel=model, cnn=CNN_model_loaded, nn=NN_model, test_loader=combined_test_loader,
         print_accuracies=True, train_alone=False)
-    reset_seeds(g,seed)
+    reset_seeds(g,configuration["SEED"])
     print(f"*** Evaluation complete. Extreme Accuracy: {extreme_acc:.4f}, Non-Extreme Accuracy: {nonextreme_acc:.4f} ***")  # NEW PRINT
 
     # Save the dictionaries with the relevant data ---------------------------------------------------------------------
@@ -57,14 +52,14 @@ def evaluation(configuration, datasets, seed, generator, losses_train_combined, 
     results_file = os.path.join(
         results_dir,
         configuration["SITE"],
-        f"{configuration["percentile_to_load"]}_results_data_{seed}.pkl"
+        f"{configuration["percentile_to_load"]}_results_data_{configuration["SEED"]}.pkl"
     )
     os.makedirs(os.path.dirname(results_file), exist_ok=True)
 
 
     with open(results_file, 'wb') as f:
         pickle.dump(seed_results, f)
-        print(f"saved file results {seed}")  # ORIGINAL PRINT
+        print(f"saved file results {configuration["SEED"]}")  # ORIGINAL PRINT
         print(f"*** Results dictionary saved to: {results_file} ***")  # NEW PRINT
 
     print("Finished training model, computing SHAP")
