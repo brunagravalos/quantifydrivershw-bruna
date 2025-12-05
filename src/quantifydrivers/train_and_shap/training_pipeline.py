@@ -134,20 +134,11 @@ def training(config_path,datasets, seed, device, generator):
     )
 
     train_dataset = datasets["train_dataset"]
-    test_dataset = datasets["test_dataset"]
     train_features_era5 = datasets["train_era5"]
-    test_features_era5 = datasets["test_era5"]
-    train_subset_combined = datasets["train_subset"]
 
     combined_train_loader = datasets["train_loader"]
     combined_val_loader = datasets["val_loader"]
-    combined_test_loader = datasets["test_loader"]
-    combined_test_dataset = datasets["combined_test"]
 
-    number_lags = ['g500', 'g200', 'psl']
-
-    # Name to save the trained CombinedModel
-    name_save_CombinedModel = f"CO2_Combinedmodel_trained_with_cnn_nn_trained_together_{number_lags}lags"
 
     #  Weights class imbalance  ---------------------------------------------------------------------------------
     print("*** Calculating Class Weights ***")  # NEW PRINT
@@ -188,8 +179,7 @@ def training(config_path,datasets, seed, device, generator):
     reset_seeds(g,seed)
 
     # Combined model
-    model = machine_learning.CombinedModel(NN_model, CNN_model_loaded, nn_hidden_dim=8, cnn_hidden_dim=16,
-                                           output_dim=2).to(device)
+    model = machine_learning.CombinedModel(NN_model, CNN_model_loaded, nn_hidden_dim=8, cnn_hidden_dim=16,output_dim=2).to(device)
     reset_seeds(g,seed)
     print("*** Combined Model initialized. Starting Training Phase... ***")  # NEW PRINT
 
@@ -220,16 +210,22 @@ def training(config_path,datasets, seed, device, generator):
                                                                                                             print_early_stop=False,
                                                                                                             trial=None)
 
-    # Save the trained CombinedModel -----------------------------
-    save_path = f"/gpfs/scratch/bsc32/bsc214253/data/test_train_n_shap_dilation/{CONF["SITE"]}/trained_models/member_{seed}_{name_save_CombinedModel}_{CONF["SITE"]}_test_2.pth"
+    # ---------------------------
+    # SAVE MODEL
+    # ---------------------------
 
-    save_dir = os.path.dirname(save_path)
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir, exist_ok=True)  # os.makedirs creates all intermediate folders
-        print(f"Created output directory: {save_dir}")  # Optional: Confirmation print
-    torch.save(model.state_dict(),
-               f"/gpfs/scratch/bsc32/bsc214253/data/test_train_n_shap_dilation/{CONF["SITE"]}/trained_models/member_{seed}_{name_save_CombinedModel}_{CONF["SITE"]}_test_2.pth")
-    print(f"*** Trained model state dictionary saved to: {save_path} ***")  # NEW PRINT
+    number_lags = CONF["dataset_config"]["variables_era5"]
+    model_name = f"CO2_Combinedmodel_trained_with_cnn_nn_trained_together_{number_lags}lags"
+    model_dir = CONF["paths"]["model_dir"]
+    save_path = os.path.join(
+        model_dir,
+        CONF["SITE"],
+        "trained_models",
+        f"member_{seed}_{model_name}_{CONF["SITE"]}_test_2.pth"
+    )
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    torch.save(model.state_dict(), save_path)
+
 
     return model, CNN_model_loaded, NN_model, losses_train_combined, losses_val_combined
 

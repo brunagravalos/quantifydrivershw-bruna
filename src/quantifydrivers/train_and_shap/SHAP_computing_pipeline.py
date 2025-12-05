@@ -7,9 +7,11 @@ import random
 import torch.nn as nn
 import torch.optim as optim
 import pickle
+import shap
 
 from quantifydrivers import machine_learning
 from quantifydrivers.machine_learning import convnext_functions
+
 
 def reset_seeds(g,seed=42):
     random.seed(seed)
@@ -20,18 +22,27 @@ def reset_seeds(g,seed=42):
 
 
 
-def evaluation(config_path,datasets, seed, generator, losses_train_combined, losses_val_combined, model,CNN_model_loaded, NN_model):
+def compute_SHAP(config_path,datasets, seed, generator, device):
     with open(config_path, "r") as f:
         CONF = yaml.safe_load(f)
 
-    g = generator
 
-    combined_test_dataset = datasets["data"]
+    train_dataset = datasets["train_dataset"]
+    train_features_era5 = datasets["train_era5"]
+    train_subset_combined = datasets["train_subset"]
+    combined_test_dataset = datasets["combined_test"]
+
+    # =======================================================================================================================================
+    # SHAP computation ----------------------------------------------------------------------------------------------------------------------
+    # =======================================================================================================================================
+    print("*** Starting SHAP Computation Phase ***")  # NEW PRINT
+
+    # Name to save the trained CombinedModel
+
     # Prepare NN model and CNN model for SHAP -----------------------------------------------------------------------------------------------
-    NN_model_loaded = machine_learning.ToCombineExtremeClassifier(input_dim=len(train_dataset.all_features),
-                                                                  train_alone_NN=False, num_classes=2).to(device)
+    NN_model_loaded = machine_learning.ToCombineExtremeClassifier(input_dim=len(train_dataset.all_features),train_alone_NN=False, num_classes=2).to(device)
     NN_model_loaded.eval()
-    reset_seeds(seed)
+    reset_seeds(generator,seed)
     CNN_model_loaded = convnext_functions.ConvNext(
         num_channels=len(train_features_era5.all_features),
         num_classes=2,
@@ -41,19 +52,26 @@ def evaluation(config_path,datasets, seed, generator, losses_train_combined, los
         drop_rate=0.05,
         train_alone=False,
     ).to(device)
-    reset_seeds(seed)
+    reset_seeds(generator,seed)
 
     # Create the Combined model for SHAP---------------------------------------------------------------------------------------------------
-    model = machine_learning.CombinedModel(NN_model_loaded, CNN_model_loaded, nn_hidden_dim=8, cnn_hidden_dim=16,
-                                           output_dim=2).to(device)
-    reset_seeds(seed)
-    # Load the trained CombinedModel weights ----------------------------------------------------------------------------------------------
-    save_path = f"/gpfs/scratch/bsc32/bsc214253/data/test_train_n_shap_dilation/{SITE}/trained_models/member_{seed}_{name_save_CombinedModel}_{SITE}_test_2.pth"
+    model = machine_learning.CombinedModel(NN_model_loaded, CNN_model_loaded, nn_hidden_dim=8, cnn_hidden_dim=16,output_dim=2).to(device)
+    reset_seeds(generator,seed)
 
-    print(f"*** Loading trained weights from: {save_path} for SHAP ***")  # NEW PRINT
-    model_state_dict = torch.load(
-        f"/gpfs/scratch/bsc32/bsc214253/data/test_train_n_shap_dilation/{SITE}/trained_models/member_{seed}_{name_save_CombinedModel}_{SITE}_test_2.pth",
-        weights_only=True)
+    number_lags = CONF["dataset_config"]["variables_era5"]
+    model_name = f"CO2_Combinedmodel_trained_with_cnn_nn_trained_together_{number_lags}lags"
+
+    model_dir = CONF["paths"]["model_dir"]
+    weight_file = os.path.join(
+        model_dir,
+        CONF["SITE"],
+        "trained_models",
+        f"member_{seed}_{model_name}_{CONF["SITE"]}_test_2.pth"
+    )
+    print("Loading model:", weight_file)
+
+    print(f"*** Loading trained weights from: {weight_file} for SHAP ***")  # NEW PRINT
+    model_state_dict = torch.load(weight_file,weights_only=True)
     model.load_state_dict(model_state_dict)
     model.eval()
 
@@ -93,11 +111,11 @@ def evaluation(config_path,datasets, seed, generator, losses_train_combined, los
     background_data = [background_nn, background_cnn]
     explain_data = [explain_nn, explain_cnn]
 
-    reset_seeds(seed)
+    reset_seeds(generator,seed)
     print("Initializing GradientExplainer...")
     explainer_grad = shap.GradientExplainer(model, background_data)
     print("Explainer initialized.")
-    reset_seeds(seed)
+    reset_seeds(generator,seed)
     print("Calculating SHAP values...")
     shap_values = explainer_grad.shap_values(explain_data)
 
@@ -114,10 +132,14 @@ def evaluation(config_path,datasets, seed, generator, losses_train_combined, los
         'cnn': shap_values_cnn_raw,
     }
 
-    # with open(f'/your/path/to/save/SHAP/results', 'wb') as f:
-    #   pickle.dump(raw_shap_dict, f)
+    #shap_dir = CONF["paths"]["shap_dir"]
+    #out_file = os.path.join(shap_dir, SITE, f"shap_raw_{seed}.pkl")
+    #os.makedirs(os.path.dirname(out_file), exist_ok=True)
 
-    print(f"Finished training and SHAP value computing for site: {CONF["SITE"]}")  # CHANGED 'site' to 'SITE'
+    #with open(out_file, "wb") as f:
+    #    pickle.dump(raw_shap_dict, f)
+
+    #print(f"Finished training and SHAP value computing for site: {CONF["SITE"]}")  # CHANGED 'site' to 'SITE'
 
     return
 

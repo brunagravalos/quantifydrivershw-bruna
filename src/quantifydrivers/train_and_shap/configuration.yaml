@@ -8,7 +8,12 @@ paths:
   file_psl: "/gpfs/scratch/bsc32/bsc167965/data/era5/lagged_anomalies/psl_1x1_lagged_standarized_anomalies.nc"
   file_CO2: "/gpfs/scratch/bsc32/bsc167965/data/daily_co2_JJA.nc"
   file_local_scale: "/gpfs/scratch/bsc32/bsc167965/data/era5land/lagged_anomalies_and_event_detection/90p_cordoba_lagged_standarized_anomalies_and_extreme_detection.nc"
+
   base_folder: "/gpfs/scratch/bsc32/bsc214253/mockdata"
+
+  model_dir: "/gpfs/scratch/bsc32/bsc214253/data/test_train_n_shap_dilation"
+  results_dir: "/gpfs/scratch/bsc32/bsc214253/results"
+  shap_dir: "/gpfs/scratch/bsc32/bsc214253/results/shap"
 
 epoch_config:
   epochs: 75

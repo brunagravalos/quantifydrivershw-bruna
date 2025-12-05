@@ -5,8 +5,16 @@ import numpy as np
 import yaml
 import sys
 import os
+import random
 
 from quantifydrivers import machine_learning
+
+def reset_seeds(g,seed=42):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    g.manual_seed(seed)
 
 def load_hypms_from_file(site_name, percentile='90p', base_path='/home/bsc/bsc167965/TFM/ML/HYPM_tunning_outputs',
                          file_name=None):
@@ -92,31 +100,20 @@ def load_mock_paths(base_folder: str, site: str, percentile: str):
 # ======================================================================
 
 
-def build_datasets_and_loaders(
-        config_path,
-        seed,generator):
+def build_datasets_and_loaders(configuration, seed, generator):
 
 
-    #### OPEN CONFIG ####
-
-    with open(config_path, "r") as f:
-        CONF = yaml.safe_load(f)
-
-    SITE = CONF["SITE"]
-    SEED = CONF["SEED"]
-
-    percentile = CONF["percentile_to_load"]
-
-    paths = load_mock_paths(CONF["paths"]["base_folder"], SITE, percentile)
+    percentile = configuration["percentile_to_load"]
+    paths = load_mock_paths(configuration["paths"]["base_folder"], configuration["SITE"], percentile)
 
     file_local_scale = paths["local"]
     file_g500 = paths["g500"]
     file_g200 = paths["g200"]
     file_psl = paths["psl"]
-    file_CO2 = paths["co2"]
-    variables_era5 = CONF["dataset_config"]["variables_era5"]
-    variables_era5land = CONF["dataset_config"]["variables_era5land"]
-    start_date = CONF["dataset_config"]["start_date"]
+    file_co2 = paths["co2"]
+    variables_era5 = configuration["dataset_config"]["variables_era5"]
+    variables_era5land = configuration["dataset_config"]["variables_era5land"]
+    start_date = configuration["dataset_config"]["start_date"]
 
     era5land_train_conf = dict(
         start_date=start_date, end_date="2013-12-31",
@@ -155,28 +152,32 @@ def build_datasets_and_loaders(
     SITE_HYPMS = SITE_HYPMS_fixed.copy()
 
     print(f"Loading hyperparameters for percentile: {percentile}")
-    params = load_hypms_from_file(SITE, percentile=percentile, file_name="file_with_hypms.txt")
+    params = load_hypms_from_file(configuration["SITE"], percentile=percentile, file_name="file_with_hypms.txt")
     if params:
-        SITE_HYPMS[SITE] = params
-    print(f"Loaded hyperparameters for {SITE}: {SITE_HYPMS[SITE]}")
+        SITE_HYPMS[configuration["SITE"]] = params
+    print(f"Loaded hyperparameters for {configuration["SITE"]}: {SITE_HYPMS[configuration["SITE"]]}")
 
-    print(f"Doing site: {SITE}")
-    print(f"*** Setting up file paths for site: {SITE} ***")  # NEW PRINT
+    print(f"Doing site: {configuration["SITE"]}")
+    print(f"*** Setting up file paths for site: {configuration["SITE"]} ***")  # NEW PRINT
 
+    reset_seeds(generator,seed)
 
 
     # -------------------------------
     # 1. CREATE LOCAL-SCALE DATASETS
     # -------------------------------
+
     train_dataset = machine_learning.LocalScale_Dataset_extremes_location_swvl_averaged_including_CO2(
-        file_path=file_local_scale, file_CO2=file_CO2, **era5land_train_conf)
+        file_path=file_local_scale, file_CO2=file_co2, **era5land_train_conf)
 
     test_dataset = machine_learning.LocalScale_Dataset_extremes_location_swvl_averaged_including_CO2(
-        file_path=file_local_scale, file_CO2=file_CO2, **era5land_test_conf)
+        file_path=file_local_scale, file_CO2=file_co2, **era5land_test_conf)
+
 
     # --------------------------------
     # 2. CREATE LARGE-SCALE DATASETS
     # --------------------------------
+
     train_features_era5 = machine_learning.LargeScale_Dataset_extremes(
         file_g500, file_g200, file_psl, **era5_train_conf)
 
@@ -184,7 +185,7 @@ def build_datasets_and_loaders(
         file_g500, file_g200, file_psl, **era5_test_conf)
 
     dataloader_conf = dict(
-        batch_size=SITE_HYPMS[SITE]['batch_size'],
+        batch_size=SITE_HYPMS[configuration["SITE"]]['batch_size'],
         drop_last=False,
         shuffle=True,
         num_workers=0,
@@ -192,40 +193,37 @@ def build_datasets_and_loaders(
     )
 
     dataloader_test_conf = dict(
-        batch_size=SITE_HYPMS[SITE]['batch_size'],
+        batch_size=SITE_HYPMS[configuration["SITE"]]['batch_size'],
         drop_last=False,
         shuffle=False,
         num_workers=0
     )
+
+
     # ---------------------------------------
     # 3. COMBINED DATASET
     # ---------------------------------------
-    combined_train = machine_learning.CombinedDataset(
-        train_dataset, train_features_era5, variables=variables_era5)
+    combined_train = machine_learning.CombinedDataset(train_dataset, train_features_era5, variables=variables_era5)
+    combined_test = machine_learning.CombinedDataset(test_dataset, test_features_era5, variables=variables_era5)
 
-    combined_test = machine_learning.CombinedDataset(
-        test_dataset, test_features_era5, variables=variables_era5)
 
     # ---------------------------------------
     # 4. TRAIN/VAL SPLIT
     # ---------------------------------------
-    #g = torch.Generator().manual_seed(seed)
 
     train_size = int(0.8 * len(combined_train))
     val_size = len(combined_train) - train_size
 
-    train_subset, val_subset = random_split(
-        combined_train, [train_size, val_size], generator=generator)
-
+    train_subset, val_subset = random_split(combined_train, [train_size, val_size], generator=generator)
 
 
     # ---------------------------------------
     # 5. DATALOADERS
-    # ---------------------------------------yes p
+    # ---------------------------------------
+
     train_loader = DataLoader(train_subset, **dataloader_conf)
     val_loader   = DataLoader(val_subset,   **dataloader_conf)
     test_loader  = DataLoader(combined_test, **dataloader_test_conf)
-
 
     return {
         "train_dataset": train_dataset,
