@@ -1,9 +1,7 @@
-# ======================================================================================================
-# IMPORT NEEDED PACKAGES
-# ======================================================================================================
+# IMPORT NEEDED PACKAGES ===============================================================================================
+# ======================================================================================================================
 
 import os
-
 os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':16:8'
 import torch
 import pandas as pd
@@ -32,36 +30,23 @@ import os
 import importlib.resources as pkg_resources
 import yaml
 
-print("--- DIAGNOSTICS START ---")
-# 1. Get and print the current working directory
+# I HAD TO ADD THIS TO BE ABLE TO IMPORT MACHINE LEARNING MODULE =======================================================
+# ======================================================================================================================
 cwd = os.getcwd()
-print(f"1. Current Working Directory (os.getcwd()): {cwd}")
-
-# 2. Calculate the project src directory
 script_dir = os.path.dirname(os.path.realpath(__file__))
-# Moves up 3 levels: train_and_shap -> quantifydrivers -> src
 project_src_dir = os.path.abspath(os.path.join(script_dir, '..', '..')) # <--- **CHANGED TO TWO '..'**
-print(f"2. Calculated project_src_dir (expected): {project_src_dir}")
-
-# 3. Add the path (if not already present)
 if project_src_dir not in sys.path:
     sys.path.append(project_src_dir)
-
-# 4. Print the final sys.path
-print("\n3. Final sys.path content:")
-for p in sys.path:
-    print(f"- {p}")
-
 from quantifydrivers import machine_learning, data_files
 from quantifydrivers.machine_learning import convnext_functions
-print("--- DIAGNOSTICS END ---")
+# ======================================================================================================================
+# ======================================================================================================================
 
 
-# DEFINE DEVICE --------------------------------------------------------------------------------------------------------
+# DETERMINISM ==========================================================================================================
+# ======================================================================================================================
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"*** Device set to: {device} ***") # NEW PRINT
-
-# CECK DETERMINISM -----------------------------------------------------------------------------------------------------
 
 try:
     torch.use_deterministic_algorithms(True)
@@ -73,67 +58,14 @@ torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.allow_tf32 = False
 torch.backends.cuda.matmul.allow_tf32 = False
-
-
 # ======================================================================================================================
-# DEFINE FUNCTIONS: seed treatment, loading of hyperparameters from hypm optimization
 # ======================================================================================================================
-
-def check_seeds():
-    print("--- CURRENT SEED STATES ---")
-    print(f"Torch seed: {torch.initial_seed()}")
-    print(f"NumPy seed: {np.random.get_state()[1][0]}")
-    print(f"Python random seed: {random.getstate()[1][0]}")
-    print(f"CUDA deterministic: {torch.backends.cudnn.deterministic}")
-
-
-def verify_determinism():
-    # Check PyTorch
-    print(f"PyTorch rand(): {torch.rand(1).item()}")
-    # Check NumPy
-    print(f"NumPy rand(): {np.random.rand()}")
-    # Check Python random
-    print(f"Python random(): {random.random()}")
-
-def reset_seeds(seed=42):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    g.manual_seed(seed)
-
-def generate_ensemble_seeds(fixed_seed=123):
-    print(f"*** Generating ensemble seeds using fixed seed: {fixed_seed} ***")
-    rng = np.random.default_rng(fixed_seed)
-    seeds = rng.integers(low=0, high=2 ** 32 - 1, size=20).tolist()
-    print(f"*** Generated {len(seeds)} ensemble seeds. ***")
-    return seeds
-
-check_seeds()
-
-# Generate list of seeds for the ensamble ---------------------------------------------------------------
-list_seeds = generate_ensemble_seeds(fixed_seed=123)
-
-# Get site from bash argument -------------------------------------------------------------------------
-parser = argparse.ArgumentParser(description="Train combined model for a specific seed.")
-parser.add_argument("seed_value", type=str, help="seed value, member of ensamble")
-args = parser.parse_args()
-seed_to_process = int(args.seed_value)
-print(f"*** Ensemble seeds generated. Using seed: {seed_to_process} ***") # NEW PRINT
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 CONF_PATH = os.path.join(SCRIPT_DIR, "configuration.yaml")
-
 with open(CONF_PATH, "r") as f:
     CONF = yaml.safe_load(f)
-
-seed = CONF["SEED"]
-SITE = 'cordoba'
-
 g = torch.Generator()
-
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-CONF_PATH = os.path.join(SCRIPT_DIR, "configuration.yaml")
 
 from data_loading2 import build_datasets_and_loaders
 datasets = build_datasets_and_loaders(configuration=CONF,generator=g)
@@ -145,4 +77,4 @@ from evaluation_pipeline import evaluation
 evaluation(configuration=CONF,datasets=datasets,generator=g,losses_train_combined=losses_train_combined,losses_val_combined=losses_val_combined,model=model,CNN_model_loaded=CNN_model_loaded,NN_model=NN_model)
 
 from SHAP_computing_pipeline import compute_SHAP
-compute_SHAP(configuration=CONF,datasets=datasets, generator=g, device=device)
+compute_SHAP(configuration=CONF,datasets=datasets,generator=g,device=device)

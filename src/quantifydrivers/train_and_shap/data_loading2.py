@@ -100,7 +100,7 @@ def load_mock_paths(base_folder: str, site: str, percentile: str):
 # ======================================================================
 
 
-def build_datasets_and_loaders(configuration, seed, generator):
+def build_datasets_and_loaders(configuration, generator):
     percentile = configuration["percentile_to_load"]
     paths = load_mock_paths(configuration["paths"]["base_folder"], configuration["SITE"], percentile)
 
