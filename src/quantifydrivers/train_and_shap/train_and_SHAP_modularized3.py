@@ -1,5 +1,4 @@
-# IMPORT NEEDED PACKAGES ===============================================================================================
-# ======================================================================================================================
+print("FILE IS EXECUTING:", __file__)
 
 import os
 os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':16:8'
@@ -37,8 +36,14 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 project_src_dir = os.path.abspath(os.path.join(script_dir, '..', '..')) # <--- **CHANGED TO TWO '..'**
 if project_src_dir not in sys.path:
     sys.path.append(project_src_dir)
+print("Before importing quantifydrivers...")
 from quantifydrivers import machine_learning, data_files
+print("Imported quantifydrivers")
+
+print("Before importing convnext_functions...")
 from quantifydrivers.machine_learning import convnext_functions
+print("Imported convnext_functions")
+
 # ======================================================================================================================
 # ======================================================================================================================
 
@@ -62,19 +67,19 @@ torch.backends.cuda.matmul.allow_tf32 = False
 # ======================================================================================================================
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-CONF_PATH = os.path.join(SCRIPT_DIR, "configuration.yaml")
+CONF_PATH = os.path.join(SCRIPT_DIR, "conf","config.yaml")
 with open(CONF_PATH, "r") as f:
     CONF = yaml.safe_load(f)
 g = torch.Generator()
 
-from data_loading2 import build_datasets_and_loaders
+from dataloading_script import build_datasets_and_loaders
 datasets = build_datasets_and_loaders(configuration=CONF,generator=g)
 
-from training_pipeline import training
+from training_script import training
 model, CNN_model_loaded, NN_model, losses_train_combined, losses_val_combined = training(configuration=CONF,datasets=datasets,device=device,generator=g)
 
-from evaluation_pipeline import evaluation
-evaluation(configuration=CONF,datasets=datasets,generator=g,losses_train_combined=losses_train_combined,losses_val_combined=losses_val_combined,model=model,CNN_model_loaded=CNN_model_loaded,NN_model=NN_model)
+from evaluation_script import evaluation
+evaluation(configuration=CONF,datasets=datasets,generator=g,device=device,losses_train_combined=None,losses_val_combined=None)
 
-from SHAP_computing_pipeline import compute_SHAP
+from SHAP_script import compute_SHAP
 compute_SHAP(configuration=CONF,datasets=datasets,generator=g,device=device)

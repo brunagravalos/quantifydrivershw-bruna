@@ -256,7 +256,7 @@ reset_seeds(seed)
 
 batch_size = 32
 
-from data_loading2 import build_datasets_and_loaders
+from dataloading_script import build_datasets_and_loaders
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 CONF_PATH = os.path.join(SCRIPT_DIR, "configuration.yaml")

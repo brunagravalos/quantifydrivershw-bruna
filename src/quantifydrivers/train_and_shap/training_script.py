@@ -1,5 +1,7 @@
-# data_loading.py
+print("TRAINING PIPELINE IMPORTED")
+
 import torch
+
 import numpy as np
 import yaml
 import os
@@ -226,8 +228,6 @@ def training(configuration,datasets, device, generator):
     )
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     torch.save(model.state_dict(), save_path)
-
-
     return model, CNN_model_loaded, NN_model, losses_train_combined, losses_val_combined
 
 
