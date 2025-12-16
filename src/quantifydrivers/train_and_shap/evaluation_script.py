@@ -19,13 +19,13 @@ def reset_seeds(g,seed=42):
     g.manual_seed(seed)
 
 
-def evaluation(configuration, datasets, generator, device, losses_train_combined=None, losses_val_combined=None):
+def evaluation(configuration, datasets, generator, device, timestamp):
 
     print("*** Starting Evaluation Phase on Test Data ***")
 
-    SITE = configuration["SITE"]
-    seed = configuration["SEED"]
-    percentile = configuration["percentile_to_load"]
+    SITE = configuration.site
+    seed = configuration.SEED
+    percentile = configuration.percentile
     g = generator
 
     # -----------------------------
@@ -66,11 +66,11 @@ def evaluation(configuration, datasets, generator, device, losses_train_combined
     # -----------------------------
     # 2. Load saved model weights
     # -----------------------------
-    number_lags = configuration["dataset_config"]["variables_era5"]
+    number_lags = configuration.dataset.variables_era5
     model_name = f"CO2_Combinedmodel_trained_with_cnn_nn_trained_together_{number_lags}lags"
 
     model_path = os.path.join(
-        configuration["paths"]["model_dir"],
+        configuration.paths.model_dir,
         SITE,
         "trained_models",
         f"member_{seed}_{model_name}_{SITE}_test_2.pth"
@@ -115,9 +115,10 @@ def evaluation(configuration, datasets, generator, device, losses_train_combined
     }
 
     results_file = os.path.join(
-        configuration["paths"]["results_dir"],
+        configuration.paths.results_dir,
         SITE,
-        f"{percentile}_results_data_{seed}.pkl"
+        f"{SITE}_{percentile}_results_{timestamp}",
+        f"{SITE}_{percentile}_evaluation_results_{timestamp}.pkl"
     )
     os.makedirs(os.path.dirname(results_file), exist_ok=True)
 

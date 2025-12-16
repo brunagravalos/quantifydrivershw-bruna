@@ -1,0 +1,6 @@
+default_hypms: False
+site_hypms:
+  lr: 1e-4
+  w_decay: 0.01
+  batch_size: 32
+  minority_weight_multiplier: 5.0

@@ -22,7 +22,7 @@ def reset_seeds(g,seed=42):
 
 
 
-def compute_SHAP(configuration,datasets, generator, device):
+def compute_SHAP(configuration,datasets, generator, device, timestamp):
 
     train_dataset = datasets["train_dataset"]
     train_features_era5 = datasets["train_era5"]
@@ -38,7 +38,7 @@ def compute_SHAP(configuration,datasets, generator, device):
     # Prepare NN model and CNN model for SHAP -----------------------------------------------------------------------------------------------
     NN_model_loaded = machine_learning.ToCombineExtremeClassifier(input_dim=len(train_dataset.all_features),train_alone_NN=False, num_classes=2).to(device)
     NN_model_loaded.eval()
-    reset_seeds(generator,configuration["SEED"])
+    reset_seeds(generator,configuration.SEED)
     CNN_model_loaded = convnext_functions.ConvNext(
         num_channels=len(train_features_era5.all_features),
         num_classes=2,
@@ -48,20 +48,20 @@ def compute_SHAP(configuration,datasets, generator, device):
         drop_rate=0.05,
         train_alone=False,
     ).to(device)
-    reset_seeds(generator,configuration["SEED"])
+    reset_seeds(generator,configuration.SEED)
 
     # Create the Combined model for SHAP---------------------------------------------------------------------------------------------------
     model = machine_learning.CombinedModel(NN_model_loaded, CNN_model_loaded, nn_hidden_dim=8, cnn_hidden_dim=16,output_dim=2).to(device)
-    reset_seeds(generator,configuration["SEED"])
-    number_lags = configuration["dataset_config"]["variables_era5"]
+    reset_seeds(generator,configuration.SEED)
+    number_lags = configuration.dataset.variables_era5
     model_name = f"CO2_Combinedmodel_trained_with_cnn_nn_trained_together_{number_lags}lags"
 
-    model_dir = configuration["paths"]["model_dir"]
+    model_dir = configuration.paths.model_dir
     weight_file = os.path.join(
         model_dir,
-        configuration["SITE"],
+        configuration.site,
         "trained_models",
-        f"member_{configuration["SEED"]}_{model_name}_{configuration["SITE"]}_test_2.pth"
+        f"member_{configuration.SEED}_{model_name}_{configuration.site}_test_2.pth"
     )
     print("Loading model:", weight_file)
 
@@ -106,15 +106,15 @@ def compute_SHAP(configuration,datasets, generator, device):
     background_data = [background_nn, background_cnn]
     explain_data = [explain_nn, explain_cnn]
 
-    reset_seeds(generator,configuration["SEED"])
+    reset_seeds(generator,configuration.SEED)
     print("Initializing GradientExplainer...")
     explainer_grad = shap.GradientExplainer(model, background_data)
     print("Explainer initialized.")
-    reset_seeds(generator,configuration["SEED"])
+    reset_seeds(generator,configuration.SEED)
     print("Calculating SHAP values...")
     shap_values = explainer_grad.shap_values(explain_data)
 
-    print(f"Finished computing SHAP values for SITE: {configuration["SITE"]}")  # CHANGED 'site' to 'SITE'
+    print(f"Finished computing SHAP values for SITE: {configuration.site}")  # CHANGED 'site' to 'SITE'
 
     # Select class to explaine, extreme (1) in our case ----------------------------------------------------------------
     class_index_to_explain = 1
@@ -127,14 +127,15 @@ def compute_SHAP(configuration,datasets, generator, device):
         'cnn': shap_values_cnn_raw,
     }
 
-    #shap_dir = CONF["paths"]["shap_dir"]
-    #out_file = os.path.join(shap_dir, SITE, f"shap_raw_{seed}.pkl")
-    #os.makedirs(os.path.dirname(out_file), exist_ok=True)
+    shap_dir = configuration.paths.results_dir
+    out_file = os.path.join(shap_dir, configuration.site, f"{configuration.site}_{configuration.percentile}_results_{timestamp}",
+                            f"{configuration.site}_{configuration.percentile}_SHAP_results_{timestamp}.pkl")
+    os.makedirs(os.path.dirname(out_file), exist_ok=True)
 
-    #with open(out_file, "wb") as f:
-    #    pickle.dump(raw_shap_dict, f)
+    with open(out_file, "wb") as f:
+        pickle.dump(raw_shap_dict, f)
 
-    #print(f"Finished training and SHAP value computing for site: {CONF["SITE"]}")  # CHANGED 'site' to 'SITE'
+    print(f"Finished training and SHAP value computing for site: {configuration.site}")  # CHANGED 'site' to 'SITE'
 
     return
 

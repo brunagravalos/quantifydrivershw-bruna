@@ -8,6 +8,7 @@ import os
 import random
 import torch.nn as nn
 import torch.optim as optim
+import pickle
 
 
 from quantifydrivers import machine_learning
@@ -20,45 +21,25 @@ def reset_seeds(g,seed=42):
     torch.cuda.manual_seed_all(seed)
     g.manual_seed(seed)
 
-def load_hypms_from_file(site_name, percentile='90p', base_path='/home/bsc/bsc167965/TFM/ML/HYPM_tunning_outputs',
-                         file_name=None):
-    """
-    Loads hyperparameters for a given site and percentile from a text file. The hyperparameters to load are hardcoded.
 
-    Args:
-        site_name (str): The name of the site (e.g., 'cordoba').
-        percentile (str): The percentile string, e.g., '95p' or '98p'.
-        base_path (str): The directory containing the hyperparameter files.
-        file_name (str): The name of the hyperparameter file. If None, it defaults to a standard naming convention.
-
-    Returns:
-        dict: A dictionary with the loaded hyperparameters or None if the file doesn't exist.
-    """
+def load_hypms_from_file(site_name, percentile='90p'):
     hypms = {}
-    #file_path = os.path.join(base_path, file_name)
 
-    # 1. Get the directory of the current script:
     script_dir = os.path.dirname(os.path.realpath(__file__))
-
-    # 2. Go up two levels to reach the 'src' directory, then navigate down into the data files.
-    # The path needs to be: /quantifydrivershw/src/quantifydrivers/data_files/HYPMS_optimization_results/
-
-    # Path to 'quantifydrivers' directory
     quantifydrivers_dir = os.path.abspath(os.path.join(script_dir, '..'))
 
-    # Construct the final path using os.path.join for reliability
     file_path = os.path.join(
         quantifydrivers_dir,
         "data_files",
         "HYPMS_optimization_results",
         f"g500_1lag_{site_name}_best_params_{percentile}_with_testing_phase.txt"
     )
-    print(f"*** Checking hyperparameter file path: {file_path} ***") # NEW PRINT
+    print(f"*** Checking hyperparameter file path: {file_path} ***")  # NEW PRINT
 
     if not os.path.exists(file_path):
         print(f"Warning: Hyperparameter file not found for {site_name} at {file_path}")
         return None
-    print(f"*** Hyperparameter file found for {site_name}. Loading content... ***") # NEW PRINT
+    print(f"*** Hyperparameter file found for {site_name}. Loading content... ***")  # NEW PRINT
 
     # This mapping handles differences between keys in the file and keys in script code
     key_mapping = {
@@ -72,11 +53,7 @@ def load_hypms_from_file(site_name, percentile='90p', base_path='/home/bsc/bsc16
                 key, value = line.split(':', 1)
                 key = key.strip()
                 value = value.strip()
-
-                # Use the mapped key if it exists, otherwise use the original key
                 code_key = key_mapping.get(key, key)
-
-                # Try to convert value to a number, skipping lines where this fails (like headers)
                 try:
                     numeric_value = float(value)
                     if code_key == 'batch_size':
@@ -86,41 +63,31 @@ def load_hypms_from_file(site_name, percentile='90p', base_path='/home/bsc/bsc16
                         hypms[code_key] = numeric_value
                 except ValueError:
                     continue
-    print(f"*** Hyperparameters successfully parsed. ***") # NEW PRINT
+    print(f"*** Hyperparameters successfully parsed. ***")  # NEW PRINT
     return hypms
 
 
-
-def training(configuration,datasets, device, generator):
+def training(configuration,datasets, device, generator, timestamp):
     g = generator
-    SITE_HYPMS_fixed = {
-        'belgrado': {'lr': 1e-4, 'w_decay': 0.01, 'batch_size': 32, 'extreme_weights_ctt': 1,
-                     'nonextreme_weights_ctt': 1},
-        'hannover': {'lr': 1e-4, 'w_decay': 0.01, 'batch_size': 32, 'extreme_weights_ctt': 1,
-                     'nonextreme_weights_ctt': 1},
-        'stockholm': {'lr': 1e-4, 'w_decay': 0.01, 'batch_size': 32, 'extreme_weights_ctt': 1,
-                      'nonextreme_weights_ctt': 1},
-        'lyon': {'lr': 1e-4, 'w_decay': 0.01, 'batch_size': 32, 'extreme_weights_ctt': 1, 'nonextreme_weights_ctt': 1},
-        'cordoba': {'lr': 1e-4, 'w_decay': 0.01, 'batch_size': 32, 'extreme_weights_ctt': 1,
-                    'nonextreme_weights_ctt': 1},
-        'marrakech': {'lr': 1e-4, 'w_decay': 0.01, 'batch_size': 32, 'extreme_weights_ctt': 1,
-                      'nonextreme_weights_ctt': 1}}
 
-    # Create empty dictionary with the base HYPMS
+    SITE_HYPMS_fixed = {'lr': configuration.hyperparameters.site_hypms.lr,
+                        'w_decay': configuration.hyperparameters.site_hypms.w_decay,
+                        'batch_size': configuration.hyperparameters.site_hypms.batch_size,
+                        'minority_weight_multiplier': configuration.hyperparameters.site_hypms.minority_weight_multiplier}
+
+    print(SITE_HYPMS_fixed['lr'], type(SITE_HYPMS_fixed['lr']))
     SITE_HYPMS = SITE_HYPMS_fixed.copy()
 
-    # ==============================================================================================================
-    # Choose which percentile's hyperparameters to load
-    percentile_to_load = '90p'
+    params = None
 
-    print(f"Loading hyperparameters for percentile: {percentile_to_load}")
-    params = load_hypms_from_file(configuration["SITE"], percentile=percentile_to_load, file_name="file_with_hypms.txt")
+    print(f"Loading hyperparameters for percentile: {configuration.percentile}")
+    if not configuration.hyperparameters.default_hypms:
+        params = load_hypms_from_file(configuration.site, percentile=configuration.percentile)
     if params:
-        SITE_HYPMS[configuration["SITE"]] = params
-    print(f"Loaded hyperparameters for {configuration["SITE"]}: {SITE_HYPMS[configuration["SITE"]]}")
+        SITE_HYPMS = params
 
-    print(f"Doing site: {configuration["SITE"]}")
-    print(f"*** Setting up file paths for site: {configuration["SITE"]} ***")  # NEW PRINT
+    print(f"Loaded hyperparameters for {configuration.site}: {SITE_HYPMS}")
+    print(SITE_HYPMS_fixed['lr'], type(SITE_HYPMS_fixed['lr']))
 
     # =================================================================================================================
     # Dataset, Dataloaders and hyperparameter configuration ----------------------------------------------------------------------------------------------------------------------------
@@ -128,8 +95,8 @@ def training(configuration,datasets, device, generator):
 
     HYPMS = dict(
         epochs=75,
-        lr=SITE_HYPMS[configuration["SITE"]]['lr'],
-        w_decay=SITE_HYPMS[configuration["SITE"]]['w_decay'],
+        lr=SITE_HYPMS['lr'],
+        w_decay=SITE_HYPMS['w_decay'],
     )
 
     train_dataset = datasets["train_dataset"]
@@ -148,7 +115,7 @@ def training(configuration,datasets, device, generator):
 
     base_minority_weight = class_counts[0] / class_counts[1]
 
-    minority_weight_multiplier = SITE_HYPMS[configuration["SITE"]]['minority_weight_multiplier']
+    minority_weight_multiplier = SITE_HYPMS['minority_weight_multiplier']
     final_minority_weight = base_minority_weight * minority_weight_multiplier
     class_weights = torch.tensor([1.0, final_minority_weight], dtype=torch.float).to(device)
     smoothed_weights = torch.sqrt(class_weights).to(device)  # smoothing the weights
@@ -160,13 +127,13 @@ def training(configuration,datasets, device, generator):
     # Final training of the combined model -------------------------------------------------------------------------------------------------------------------------------------------------
     print("*** Initializing Models (NN and CNN) ***")  # NEW PRINT
 
-    reset_seeds(g,configuration["SEED"])
+    reset_seeds(g,configuration.SEED)
 
     # MLP for local-scale
     NN_model = machine_learning.ToCombineExtremeClassifier(input_dim=len(train_dataset.all_features),
                                                            train_alone_NN=False, num_classes=2).to(device)
 
-    reset_seeds(g,configuration["SEED"])
+    reset_seeds(g,configuration.SEED)
 
     # ConvNext for large-scale
     CNN_model_loaded = convnext_functions.ConvNext(
@@ -179,17 +146,17 @@ def training(configuration,datasets, device, generator):
         train_alone=False,
     ).to(device)
 
-    reset_seeds(g,configuration["SEED"])
+    reset_seeds(g,configuration.SEED)
 
     # Combined model
     model = machine_learning.CombinedModel(NN_model, CNN_model_loaded, nn_hidden_dim=8, cnn_hidden_dim=16,output_dim=2).to(device)
-    reset_seeds(g,configuration["SEED"])
+    reset_seeds(g,configuration.SEED)
     print("*** Combined Model initialized. Starting Training Phase... ***")  # NEW PRINT
 
     # =======================================================================================================================================
     # Train phase Combined model -------------------------------------------------------------------------------------------------------------
     # =======================================================================================================================================
-    reset_seeds(g,configuration["SEED"])
+    reset_seeds(g,configuration.SEED)
 
     # Optimizer
     optimizer_combined = optim.AdamW(model.parameters(), lr=HYPMS['lr'], weight_decay=HYPMS['w_decay'])
@@ -204,8 +171,7 @@ def training(configuration,datasets, device, generator):
                                                                                                             criterion=criterion,
                                                                                                             optimizer=optimizer_combined,
                                                                                                             num_epochs=
-                                                                                                            HYPMS[
-                                                                                                                'epochs'],
+                                                                                                            HYPMS['epochs'],
                                                                                                             plot_loss=False,
                                                                                                             print_loss=False,
                                                                                                             early_stop=True,
@@ -217,18 +183,33 @@ def training(configuration,datasets, device, generator):
     # SAVE MODEL
     # ---------------------------
 
-    number_lags = configuration["dataset_config"]["variables_era5"]
+    number_lags = configuration.dataset.variables_era5
     model_name = f"CO2_Combinedmodel_trained_with_cnn_nn_trained_together_{number_lags}lags"
-    model_dir = configuration["paths"]["model_dir"]
+    model_dir = configuration.paths.model_dir
     save_path = os.path.join(
         model_dir,
-        configuration["SITE"],
+        configuration.site,
         "trained_models",
-        f"member_{configuration["SEED"]}_{model_name}_{configuration["SITE"]}_test_2.pth"
+        f"member_{configuration.SEED}_{model_name}_{configuration.site}_test_2.pth"
     )
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     torch.save(model.state_dict(), save_path)
-    return model, CNN_model_loaded, NN_model, losses_train_combined, losses_val_combined
+
+    seed_results = {
+        'losses_train': losses_train_combined,
+        'losses_val': losses_val_combined
+    }
+
+    results_file = os.path.join(
+        configuration.paths.results_dir,
+        configuration.site,
+        f"{configuration.site}_{configuration.percentile}_results_{timestamp}",
+        f"{configuration.site}_{configuration.percentile}_losses_{timestamp}.pkl"
+    )
+    os.makedirs(os.path.dirname(results_file), exist_ok=True)
+
+    with open(results_file, "wb") as f:
+        pickle.dump(seed_results, f)
 
 
 

@@ -10,7 +10,7 @@
 #SBATCH --output=process_%j.out
 #SBATCH --error=process_%j.err
 
-SCRIPT_PATH="/gpfs/scratch/bsc32/bsc214253/quantifydrivershw/src/quantifydrivers/train_and_shap/evaluation_SHAP_pipeline.py"
+SCRIPT_PATH="/gpfs/scratch/bsc32/bsc214253/quantifydrivershw/src/quantifydrivers/train_and_shap/training_evaluation_SHAP_pipeline.py"
 CONTAINER_PATH="/gpfs/scratch/bsc32/bsc167965/environments/pangeo_pytorch-202502"
 BIND_PATH="/gpfs/scratch/bsc32/bsc167965/"
 
@@ -29,4 +29,4 @@ module load singularity
 
 singularity exec --nv -B $BIND_PATH \
   $CONTAINER_PATH \
-  python $SCRIPT_PATH SITE=hannover
+  python $SCRIPT_PATH

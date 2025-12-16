@@ -22,7 +22,19 @@ import optuna
 import random
 from tqdm import tqdm
 import torch.nn as nn                   
-import torch.nn.functional as F  
+import torch.nn.functional as F
+
+
+def open_xr_dataset(path: str) -> xr.Dataset:
+    """
+    Open NetCDF or Zarr transparently.
+    """
+    if path.endswith(".nc"):
+        return xr.open_dataset(path)
+    else:
+        # Zarr group or store
+        return xr.open_zarr(path, consolidated=True)
+
 
 # =============================================================================================================================
 # This script defines custom PyTorch Dataset classes for handling ERA5 and ERA5-Land climate data,
@@ -113,14 +125,14 @@ class LargeScale_Dataset_extremes(Dataset):
 
         # g500
         if "g500" in self.variables:
-            ds_g500 = xr.open_dataset(file_g500).sel(time=slice(start_date, end_date)).sel(lon=slice(-54,69))
+            ds_g500 = open_xr_dataset(file_g500).sel(time=slice(start_date, end_date)).sel(lon=slice(-54,69))
             ds_g500 = ds_g500.sel(time=ds_g500.time.dt.month.isin(months), drop=True)
             datasets["g500"] = ds_g500
             lagged_vars_dict["g500"] = [f'lagged_era5g500_anomalies_lag{lag}' for lag in range(start_lag, lags_era5+1)]
 
         # g200
         if "g200" in self.variables:
-            ds_g200 = xr.open_dataset(file_g200).sel(time=slice(start_date, end_date)).sel(lon=slice(-54,69))
+            ds_g200 = open_xr_dataset(file_g200).sel(time=slice(start_date, end_date)).sel(lon=slice(-54,69))
             ds_g200 = ds_g200.sel(time=ds_g200.time.dt.month.isin(months), drop=True)
             ds_g200 = ds_g200.squeeze('plev', drop=True) 
             datasets["g200"] = ds_g200
@@ -128,7 +140,7 @@ class LargeScale_Dataset_extremes(Dataset):
 
         # psl
         if "psl" in self.variables:
-            ds_psl = xr.open_dataset(file_psl).sel(time=slice(start_date, end_date)).sel(lon=slice(-54,69))
+            ds_psl = open_xr_dataset(file_psl).sel(time=slice(start_date, end_date)).sel(lon=slice(-54,69))
             ds_psl = ds_psl.sel(time=ds_psl.time.dt.month.isin(months), drop=True)
             datasets["psl"] = ds_psl
             lagged_vars_dict["psl"] = [f'lagged_era5psl_anomalies_lag{lag}' for lag in range(start_lag, lags_era5+1)]
@@ -207,9 +219,9 @@ class LocalScale_Dataset_extremes_location_swvl_averaged_including_CO2(Dataset):
         self.variables = variables  # Store selected variables
 
         # Load dataset with lagged-data and extreme classification 
-        self.ds = xr.open_dataset(file_path).sel(time=slice(start_date, end_date))
+        self.ds = open_xr_dataset(file_path).sel(time=slice(start_date, end_date))
         self.ds = self.ds.sel(time=self.ds.time.dt.month.isin(months),drop=True)
-        self.dsco2 = xr.open_dataset(file_CO2).sel(time=slice(start_date, end_date))
+        self.dsco2 = open_xr_dataset(file_CO2).sel(time=slice(start_date, end_date))
         self.co2conc = self.dsco2['co2_concentration'].values
 
         # Define all lagged swvl variables
