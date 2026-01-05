@@ -23,17 +23,40 @@ import random
 from tqdm import tqdm
 import torch.nn as nn                   
 import torch.nn.functional as F
+import os
+import zarr
 
 
 def open_xr_dataset(path: str) -> xr.Dataset:
     """
-    Open NetCDF or Zarr transparently.
+    Robustly open NetCDF or Zarr, handling nested Zarr groups correctly.
     """
-    if path.endswith(".nc"):
-        return xr.open_dataset(path)
-    else:
-        # Zarr group or store
-        return xr.open_zarr(path, consolidated=True)
+    # 1. Handle Zarr files (directories or paths containing .zarr)
+    if ".zarr" in path:
+        # CASE A: The path is the root store (ends in .zarr)
+        if path.endswith(".zarr"):
+            return xr.open_dataset(path, engine="zarr", consolidated=True)
+
+        # CASE B: The path is deep inside a store (e.g., .../data.zarr/group/subgroup)
+        else:
+            # We split the path into the Root Store and the Group
+            # content before .zarr is the root, content after is the group
+            parts = path.split(".zarr")
+            root_path = parts[0] + ".zarr"
+
+            # Remove leading slashes from the second part to get the group name
+            group_name = parts[1].lstrip("/")
+
+            # Open the root, but target the specific group
+            return xr.open_dataset(
+                root_path,
+                engine="zarr",
+                consolidated=False,
+                group=group_name
+            )
+
+    # 2. Handle NetCDF files
+    return xr.open_dataset(path, engine="netcdf4")
 
 
 # =============================================================================================================================

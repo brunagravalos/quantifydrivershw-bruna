@@ -1,5 +1,6 @@
 import xarray as xr
 from pathlib import Path
+import zarr
 
 def nc_to_zarr(nc_path, zarr_path, chunks=None):
     ds = xr.open_dataset(nc_path, chunks=chunks)
@@ -43,3 +44,11 @@ for site in ["cordoba", "hannover", "stockholm","belgrado","marrakech", "lyon"]:
             base_zarr / "era5land" / perc / site,
             chunks={"time": 200}
         )
+
+# 1. Initialize the root as a group (mode='a' creates it if missing)
+# This creates the hidden .zgroup file at the top level
+zarr.open_group(str(base_zarr), mode='a')
+
+# 2. NOW consolidate the metadata
+# This scans all children and creates the .zmetadata file at the root
+zarr.consolidate_metadata(str(base_zarr))

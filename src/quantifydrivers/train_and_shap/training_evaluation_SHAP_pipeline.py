@@ -67,7 +67,7 @@ def save_used_config(cfg, output_dir):
 @hydra.main(config_path="conf", config_name="config", version_base=None)
 def main(cfg: DictConfig):
     timestamp = datetime.now()
-    formatted_time = timestamp.strftime('%m-%d-%Y--%H-%M')
+    formatted_time = timestamp.strftime('%m-%d-%Y_%H-%M')
     print(formatted_time)
     print("Loaded config:")
     print(OmegaConf.to_yaml(cfg))
@@ -105,7 +105,7 @@ def main(cfg: DictConfig):
     results_dir = os.path.join(
         validated_cfg.paths.results_dir,
         validated_cfg.site,
-        f"{validated_cfg.site}_{validated_cfg.percentile}_results_{timestamp}"
+        f"{validated_cfg.site}_{validated_cfg.percentile}_results_{validated_cfg.SEED}_{timestamp}"
     )
     os.makedirs(results_dir, exist_ok=True)
     save_used_config(cfg, results_dir)

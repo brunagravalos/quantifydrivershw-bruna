@@ -118,7 +118,7 @@ def evaluation(configuration, datasets, generator, device, timestamp):
         configuration.paths.results_dir,
         SITE,
         f"{SITE}_{percentile}_results_{timestamp}",
-        f"{SITE}_{percentile}_evaluation_results_{timestamp}.pkl"
+        f"{SITE}_{percentile}_evaluation_results_SEED{configuration.SEED}_{timestamp}.pkl"
     )
     os.makedirs(os.path.dirname(results_file), exist_ok=True)
 

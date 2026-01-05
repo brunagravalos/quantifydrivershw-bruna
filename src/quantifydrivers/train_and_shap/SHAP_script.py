@@ -128,8 +128,9 @@ def compute_SHAP(configuration,datasets, generator, device, timestamp):
     }
 
     shap_dir = configuration.paths.results_dir
-    out_file = os.path.join(shap_dir, configuration.site, f"{configuration.site}_{configuration.percentile}_results_{timestamp}",
-                            f"{configuration.site}_{configuration.percentile}_SHAP_results_{timestamp}.pkl")
+    out_file = os.path.join(shap_dir, configuration.site, f"{configuration.site}_{configuration.percentile}_results_{configuration.SEED}_{timestamp}",
+                            f"{configuration.site}_{configuration.percentile}_SHAP_results_{configuration.SEED}_{timestamp}.pkl")
+    print(f"output file path: {out_file}")
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
 
     with open(out_file, "wb") as f:
