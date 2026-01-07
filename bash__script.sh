@@ -10,7 +10,7 @@
 #SBATCH --output=process_%j.out
 #SBATCH --error=process_%j.err
 
-SCRIPT_PATH="/gpfs/scratch/bsc32/bsc214253/quantifydrivershw/src/quantifydrivers/train_and_shap/training_evaluation_SHAP_pipeline.py"
+SCRIPT_PATH="/gpfs/scratch/bsc32/bsc214253/quantifydrivershw/src/quantifydrivers/train_and_shap/evaluation_SHAP_pipeline.py"
 #CONTAINER_PATH="/gpfs/scratch/bsc32/bsc167965/environments/pangeo_pytorch-202502"
 #BIND_PATH="/gpfs/scratch/bsc32/bsc167965/"
 
@@ -34,4 +34,4 @@ SCRIPT_PATH="/gpfs/scratch/bsc32/bsc214253/quantifydrivershw/src/quantifydrivers
 
 
 # Run the script inside the uv-managed environment
-uv run python "$SCRIPT_PATH" -m SEED=66316748,2930678936,2546691362,231159514,3904498325,946438445,1095601156,791870896,1432871125,755510091,1493800520,3487919346,1938714511,3965736568,1930440936,1187877992,3387705611,3520819031,3701866991,3822060012
+uv run python "$SCRIPT_PATH" -m seed=66316748,2930678936,2546691362,231159514,3904498325,946438445,1095601156,791870896,1432871125,755510091,1493800520,3487919346,1938714511,3965736568,1930440936,1187877992,3387705611,3520819031,3701866991,3822060012

@@ -1,5 +1,6 @@
 # IMPORT NEEDED PACKAGES
 import os
+
 os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':16:8'
 
 import torch
@@ -28,8 +29,6 @@ import importlib.resources as pkg_resources
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from datetime import datetime
-from quantifydrivers.train_and_shap.config_schema import validate_schema
-
 
 # PATH FIX FOR PROJECT
 cwd = os.getcwd()
@@ -39,8 +38,9 @@ project_src_dir = os.path.abspath(os.path.join(script_dir, '..', '..'))
 if project_src_dir not in sys.path:
     sys.path.append(project_src_dir)
 
-from quantifydrivers import machine_learning, data_files
-from quantifydrivers.machine_learning import convnext_functions
+
+from quantifydrivers.train_and_shap.config_schema import validate_schema
+
 
 # SETS DETERMINISM
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -57,6 +57,7 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.allow_tf32 = False
 torch.backends.cuda.matmul.allow_tf32 = False
 
+
 def save_used_config(cfg, output_dir):
     os.makedirs(output_dir, exist_ok=True)
     config_path = os.path.join(output_dir, "used_config.yaml")
@@ -68,26 +69,22 @@ def main(cfg: DictConfig):
     timestamp = datetime.now()
     formatted_time = timestamp.strftime('%m-%d-%Y_%H-%M')
     print(formatted_time)
-
-    print("Loaded config:")
-    print(OmegaConf.to_yaml(cfg))
-
     print("Loaded config:")
     print(OmegaConf.to_yaml(cfg))
 
     try:
         validated_cfg = validate_schema(cfg)
     except Exception as e:
-        print("\n❌ CONFIG VALIDATION FAILED ❌")
+        print("\nCONFIG VALIDATION FAILED")
         print(e)
         raise
 
-    print("\n✅ Config validation passed!")
+    print("\nConfig validation passed!")
     print(validated_cfg)
 
     # Create torch generator seeded from config
     g = torch.Generator()
-    g.manual_seed(validated_cfg.SEED)
+    g.manual_seed(validated_cfg.seed)
 
     # --- Build datasets
     from dataloading_script import build_datasets_and_loaders
@@ -95,17 +92,17 @@ def main(cfg: DictConfig):
 
     # --- Run evaluation
     from evaluation_script import evaluation
-    evaluation(configuration=validated_cfg, datasets=datasets, generator=g, device=device,timestamp=formatted_time)
+    evaluation(configuration=validated_cfg, datasets=datasets, generator=g, device=device, timestamp=formatted_time)
 
     # --- SHAP computation
     from SHAP_script import compute_SHAP
-    compute_SHAP(configuration=validated_cfg, datasets=datasets, generator=g, device=device,timestamp=formatted_time)
+    compute_SHAP(configuration=validated_cfg, datasets=datasets, generator=g, device=device, timestamp=formatted_time)
 
     # --- Saved used configuration
     results_dir = os.path.join(
         validated_cfg.paths.results_dir,
         validated_cfg.site,
-        f"{validated_cfg.site}_{validated_cfg.percentile}_results_{timestamp}"
+        f"{validated_cfg.site}_{validated_cfg.percentile}_{validated_cfg.seed}"
     )
     os.makedirs(results_dir, exist_ok=True)
     save_used_config(cfg, results_dir)

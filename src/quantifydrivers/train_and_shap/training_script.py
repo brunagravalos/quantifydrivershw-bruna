@@ -127,13 +127,13 @@ def training(configuration,datasets, device, generator, timestamp):
     # Final training of the combined model -------------------------------------------------------------------------------------------------------------------------------------------------
     print("*** Initializing Models (NN and CNN) ***")  # NEW PRINT
 
-    reset_seeds(g,configuration.SEED)
+    reset_seeds(g,configuration.seed)
 
     # MLP for local-scale
     NN_model = machine_learning.ToCombineExtremeClassifier(input_dim=len(train_dataset.all_features),
                                                            train_alone_NN=False, num_classes=2).to(device)
 
-    reset_seeds(g,configuration.SEED)
+    reset_seeds(g,configuration.seed)
 
     # ConvNext for large-scale
     CNN_model_loaded = convnext_functions.ConvNext(
@@ -146,17 +146,17 @@ def training(configuration,datasets, device, generator, timestamp):
         train_alone=False,
     ).to(device)
 
-    reset_seeds(g,configuration.SEED)
+    reset_seeds(g,configuration.seed)
 
     # Combined model
     model = machine_learning.CombinedModel(NN_model, CNN_model_loaded, nn_hidden_dim=8, cnn_hidden_dim=16,output_dim=2).to(device)
-    reset_seeds(g,configuration.SEED)
+    reset_seeds(g,configuration.seed)
     print("*** Combined Model initialized. Starting Training Phase... ***")  # NEW PRINT
 
     # =======================================================================================================================================
     # Train phase Combined model -------------------------------------------------------------------------------------------------------------
     # =======================================================================================================================================
-    reset_seeds(g,configuration.SEED)
+    reset_seeds(g,configuration.seed)
 
     # Optimizer
     optimizer_combined = optim.AdamW(model.parameters(), lr=HYPMS['lr'], weight_decay=HYPMS['w_decay'])
@@ -190,7 +190,7 @@ def training(configuration,datasets, device, generator, timestamp):
         model_dir,
         configuration.site,
         "trained_models",
-        f"member_{configuration.SEED}_{model_name}_{configuration.site}_test_2.pth"
+        f"member_{configuration.seed}_{model_name}_{configuration.site}_test_2.pth"
     )
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     torch.save(model.state_dict(), save_path)
@@ -203,8 +203,8 @@ def training(configuration,datasets, device, generator, timestamp):
     results_file = os.path.join(
         configuration.paths.results_dir,
         configuration.site,
-        f"{configuration.site}_{configuration.percentile}_results_{timestamp}",
-        f"{configuration.site}_{configuration.percentile}_losses_{timestamp}.pkl"
+        f"{configuration.site}_{configuration.percentile}_{configuration.seed}",
+        f"{configuration.site}_{configuration.percentile}_{configuration.seed}_losses.pkl"
     )
     os.makedirs(os.path.dirname(results_file), exist_ok=True)
 

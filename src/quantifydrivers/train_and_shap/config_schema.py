@@ -138,7 +138,7 @@ class EpochConfig(BaseModel):
 
 
 class DatasetSchema(BaseModel):
-    SEED: int
+    seed: int
     site: str
     percentile: Literal["90p", "80p", "95p"]
     hyperparameters: HyperparametersConfig

@@ -24,7 +24,7 @@ def evaluation(configuration, datasets, generator, device, timestamp):
     print("*** Starting Evaluation Phase on Test Data ***")
 
     SITE = configuration.site
-    seed = configuration.SEED
+    seed = configuration.seed
     percentile = configuration.percentile
     g = generator
 
@@ -68,6 +68,11 @@ def evaluation(configuration, datasets, generator, device, timestamp):
     # -----------------------------
     number_lags = configuration.dataset.variables_era5
     model_name = f"CO2_Combinedmodel_trained_with_cnn_nn_trained_together_{number_lags}lags"
+    model_dir = os.path.join(
+        configuration.paths.model_dir,
+        SITE,
+        "trained_models")
+    os.makedirs(model_dir, exist_ok=True)
 
     model_path = os.path.join(
         configuration.paths.model_dir,
@@ -117,8 +122,8 @@ def evaluation(configuration, datasets, generator, device, timestamp):
     results_file = os.path.join(
         configuration.paths.results_dir,
         SITE,
-        f"{SITE}_{percentile}_results_{timestamp}",
-        f"{SITE}_{percentile}_evaluation_results_SEED{configuration.SEED}_{timestamp}.pkl"
+        f"{SITE}_{percentile}_{configuration.seed}",
+        f"{SITE}_{percentile}_{configuration.seed}_evaluation.pkl"
     )
     os.makedirs(os.path.dirname(results_file), exist_ok=True)
 
@@ -126,3 +131,4 @@ def evaluation(configuration, datasets, generator, device, timestamp):
         pickle.dump(seed_results, f)
 
     print(f"*** Results saved in {results_file} ***")
+

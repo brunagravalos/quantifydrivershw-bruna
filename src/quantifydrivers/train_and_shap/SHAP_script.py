@@ -38,7 +38,7 @@ def compute_SHAP(configuration,datasets, generator, device, timestamp):
     # Prepare NN model and CNN model for SHAP -----------------------------------------------------------------------------------------------
     NN_model_loaded = machine_learning.ToCombineExtremeClassifier(input_dim=len(train_dataset.all_features),train_alone_NN=False, num_classes=2).to(device)
     NN_model_loaded.eval()
-    reset_seeds(generator,configuration.SEED)
+    reset_seeds(generator,configuration.seed)
     CNN_model_loaded = convnext_functions.ConvNext(
         num_channels=len(train_features_era5.all_features),
         num_classes=2,
@@ -48,11 +48,11 @@ def compute_SHAP(configuration,datasets, generator, device, timestamp):
         drop_rate=0.05,
         train_alone=False,
     ).to(device)
-    reset_seeds(generator,configuration.SEED)
+    reset_seeds(generator,configuration.seed)
 
     # Create the Combined model for SHAP---------------------------------------------------------------------------------------------------
     model = machine_learning.CombinedModel(NN_model_loaded, CNN_model_loaded, nn_hidden_dim=8, cnn_hidden_dim=16,output_dim=2).to(device)
-    reset_seeds(generator,configuration.SEED)
+    reset_seeds(generator,configuration.seed)
     number_lags = configuration.dataset.variables_era5
     model_name = f"CO2_Combinedmodel_trained_with_cnn_nn_trained_together_{number_lags}lags"
 
@@ -61,7 +61,7 @@ def compute_SHAP(configuration,datasets, generator, device, timestamp):
         model_dir,
         configuration.site,
         "trained_models",
-        f"member_{configuration.SEED}_{model_name}_{configuration.site}_test_2.pth"
+        f"member_{configuration.seed}_{model_name}_{configuration.site}_test_2.pth"
     )
     print("Loading model:", weight_file)
 
@@ -106,11 +106,11 @@ def compute_SHAP(configuration,datasets, generator, device, timestamp):
     background_data = [background_nn, background_cnn]
     explain_data = [explain_nn, explain_cnn]
 
-    reset_seeds(generator,configuration.SEED)
+    reset_seeds(generator,configuration.seed)
     print("Initializing GradientExplainer...")
     explainer_grad = shap.GradientExplainer(model, background_data)
     print("Explainer initialized.")
-    reset_seeds(generator,configuration.SEED)
+    reset_seeds(generator,configuration.seed)
     print("Calculating SHAP values...")
     shap_values = explainer_grad.shap_values(explain_data)
 
@@ -128,8 +128,8 @@ def compute_SHAP(configuration,datasets, generator, device, timestamp):
     }
 
     shap_dir = configuration.paths.results_dir
-    out_file = os.path.join(shap_dir, configuration.site, f"{configuration.site}_{configuration.percentile}_results_{configuration.SEED}_{timestamp}",
-                            f"{configuration.site}_{configuration.percentile}_SHAP_results_{configuration.SEED}_{timestamp}.pkl")
+    out_file = os.path.join(shap_dir, configuration.site, f"{configuration.site}_{configuration.percentile}_{configuration.seed}",
+                            f"{configuration.site}_{configuration.percentile}__{configuration.seed}_shap.pkl")
     print(f"output file path: {out_file}")
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
 

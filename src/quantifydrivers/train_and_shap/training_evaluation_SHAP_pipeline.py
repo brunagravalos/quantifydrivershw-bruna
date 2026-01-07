@@ -84,7 +84,7 @@ def main(cfg: DictConfig):
 
     # Create torch generator seeded from config
     g = torch.Generator()
-    g.manual_seed(validated_cfg.SEED)
+    g.manual_seed(validated_cfg.seed)
 
     # --- Build datasets
     from dataloading_script import build_datasets_and_loaders
@@ -105,7 +105,7 @@ def main(cfg: DictConfig):
     results_dir = os.path.join(
         validated_cfg.paths.results_dir,
         validated_cfg.site,
-        f"{validated_cfg.site}_{validated_cfg.percentile}_results_{validated_cfg.SEED}_{timestamp}"
+        f"{validated_cfg.site}_{validated_cfg.percentile}_{validated_cfg.seed}"
     )
     os.makedirs(results_dir, exist_ok=True)
     save_used_config(cfg, results_dir)

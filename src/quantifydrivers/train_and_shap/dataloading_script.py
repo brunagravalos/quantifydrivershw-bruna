@@ -152,7 +152,7 @@ def build_datasets_and_loaders(configuration, generator):
 
     print(f"Doing site: {configuration.site}")
     print(f"*** Setting up file paths for site: {configuration.site} ***")  # NEW PRINT
-    reset_seeds(generator,configuration.SEED)
+    reset_seeds(generator,configuration.seed)
 
     # -------------------------------
     # 1. CREATE LOCAL-SCALE DATASETS

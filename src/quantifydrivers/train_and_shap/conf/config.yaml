@@ -4,8 +4,8 @@ defaults:
   - dataset: default
   - _self_
 
-SEED: 1234
-site: "cordoba"
+seed: 1234
+site: "hannover"
 percentile: "90p"
 
 epoch_config:

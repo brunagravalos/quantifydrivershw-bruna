@@ -132,55 +132,41 @@ def gather_ensamble_probabilities(CombinedModel,cnn,nn,test_loader):
 
 # -------------------------------------------------------------------------------------------------
 
-def evaluate_ensamble(CombinedModel,cnn,nn,test_loader,probs_ensamble,print_accuracies=True,batch_size=32):
-
-    ''' 
-    Function to evaluate the ensamble model based on precomputed probabilities.
-    CombinedModel: MLP combining cnn and nn
-    CNN: convolutional neural netwrok model
-    NN: MLP model
-    probs_ensamble: 2D array with the probabilitites for class 0 and 1 across samples.
-    batch_size: batch size used during evaluation (to slice the probs_ensamble array)
-    print_accuracies: whether to print accuracies or not
-    
-    Returns: y_true, y_pred, extreme_accuracy, non_extreme_accuracy'''
-
-    CombinedModel.eval()  
-    cnn.eval()
-    nn.eval()
+def evaluate_ensamble(test_loader, probs_ensamble, print_accuracies=True, batch_size=32):
+    """
+    test_loader : dataloader for test set
+    probs_ensamble : 2D array with the probabilitites for class 0 and 1 across samples.
+    """
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
+    device = torch.device("cpu")
     correct_extreme = 0
     total_extreme = 0
-    
+
     correct_non_extreme = 0
     total_non_extreme = 0
 
     y_true = []
     y_pred = []
 
-    with torch.no_grad(): 
-        for i,(local,regional,labels) in enumerate(test_loader):
-            local,regional,labels = local.to(device), regional.to(device), labels.to(device)
+    for i, (local, regional, labels) in enumerate(test_loader):
+        local, regional, labels = local.to(device), regional.to(device), labels.to(device)
 
+        outputs_ensamble = probs_ensamble[batch_size * i:batch_size * (i + 1)]
+        predicted = np.argmax(outputs_ensamble, axis=1)
 
-            outputs_ensamble = probs_ensamble[batch_size*i:batch_size*(i+1)]
-            predicted = np.argmax(outputs_ensamble, axis=1)
-          
+        y_true.extend(labels.cpu().numpy())
+        y_pred.extend(predicted)
 
-            y_true.extend(labels.cpu().numpy())
-            y_pred.extend(predicted)
-    
-            # Compare predictions to true labels
-            for label, prediction in zip(labels, predicted):
-                if label == 1:  # extreme class
-                    total_extreme += 1
-                    correct_extreme += (prediction == label).item()
-                elif label == 0:  # non-extreme class
-                    total_non_extreme += 1
-                    correct_non_extreme += (prediction == label).item()
- 
+        # Compare predictions to true labels
+        for label, prediction in zip(labels, predicted):
+            if label == 1:  # extreme class
+                total_extreme += 1
+                correct_extreme += (prediction == label).item()
+            elif label == 0:  # non-extreme class
+                total_non_extreme += 1
+                correct_non_extreme += (prediction == label).item()
+
     # Compute accuracy
     extreme_accuracy = 100 * correct_extreme / total_extreme if total_extreme > 0 else 0
     non_extreme_accuracy = 100 * correct_non_extreme / total_non_extreme if total_non_extreme > 0 else 0
