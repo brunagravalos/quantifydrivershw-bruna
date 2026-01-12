@@ -23,7 +23,7 @@ def evaluation(configuration, datasets, generator, device, timestamp):
 
     print("*** Starting Evaluation Phase on Test Data ***")
 
-    SITE = configuration.site
+    SITE = configuration.site.name
     seed = configuration.seed
     percentile = configuration.percentile
     g = generator
@@ -119,11 +119,16 @@ def evaluation(configuration, datasets, generator, device, timestamp):
 
     }
 
+    if configuration.dataset.use_spei:
+        save_name = f"{SITE}_{percentile}_{configuration.seed}_{configuration.dataset.spei_spi}_evaluation.pkl"
+    else:
+        save_name = f"{SITE}_{percentile}_{configuration.seed}_evaluation.pkl"
+
     results_file = os.path.join(
         configuration.paths.results_dir,
         SITE,
         f"{SITE}_{percentile}_{configuration.seed}",
-        f"{SITE}_{percentile}_{configuration.seed}_evaluation.pkl"
+        save_name
     )
     os.makedirs(os.path.dirname(results_file), exist_ok=True)
 

@@ -93,6 +93,7 @@ def main(cfg: DictConfig):
     # --- Train model
     from training_script import training
     training(configuration=validated_cfg,datasets=datasets,device=device,generator=g,timestamp=formatted_time)
+
     # --- Run evaluation
     from evaluation_script import evaluation
     evaluation(configuration=validated_cfg, datasets=datasets, generator=g, device=device, timestamp=formatted_time)
@@ -104,8 +105,8 @@ def main(cfg: DictConfig):
     # --- Saved used configuration
     results_dir = os.path.join(
         validated_cfg.paths.results_dir,
-        validated_cfg.site,
-        f"{validated_cfg.site}_{validated_cfg.percentile}_{validated_cfg.seed}"
+        validated_cfg.site.name,
+        f"{validated_cfg.site.name}_{validated_cfg.percentile}_{validated_cfg.seed}"
     )
     os.makedirs(results_dir, exist_ok=True)
     save_used_config(cfg, results_dir)

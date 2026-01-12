@@ -59,9 +59,9 @@ def compute_SHAP(configuration,datasets, generator, device, timestamp):
     model_dir = configuration.paths.model_dir
     weight_file = os.path.join(
         model_dir,
-        configuration.site,
+        configuration.site.name,
         "trained_models",
-        f"member_{configuration.seed}_{model_name}_{configuration.site}_test_2.pth"
+        f"member_{configuration.seed}_{model_name}_{configuration.site.name}_test_2.pth"
     )
     print("Loading model:", weight_file)
 
@@ -114,7 +114,7 @@ def compute_SHAP(configuration,datasets, generator, device, timestamp):
     print("Calculating SHAP values...")
     shap_values = explainer_grad.shap_values(explain_data)
 
-    print(f"Finished computing SHAP values for SITE: {configuration.site}")  # CHANGED 'site' to 'SITE'
+    print(f"Finished computing SHAP values for SITE: {configuration.site.name}")  # CHANGED 'site' to 'SITE'
 
     # Select class to explaine, extreme (1) in our case ----------------------------------------------------------------
     class_index_to_explain = 1
@@ -127,16 +127,22 @@ def compute_SHAP(configuration,datasets, generator, device, timestamp):
         'cnn': shap_values_cnn_raw,
     }
 
+    if configuration.dataset.use_spei:
+        save_name = f"{configuration.site.name}_{configuration.percentile}_{configuration.seed}_{configuration.dataset.spei_spi}_shap.pkl"
+    else:
+        save_name = f"{configuration.site.name}_{configuration.percentile}_{configuration.seed}_shap.pkl"
+
+
     shap_dir = configuration.paths.results_dir
-    out_file = os.path.join(shap_dir, configuration.site, f"{configuration.site}_{configuration.percentile}_{configuration.seed}",
-                            f"{configuration.site}_{configuration.percentile}__{configuration.seed}_shap.pkl")
+    out_file = os.path.join(shap_dir, configuration.site.name, f"{configuration.site.name}_{configuration.percentile}_{configuration.seed}",
+                            save_name)
     print(f"output file path: {out_file}")
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
 
     with open(out_file, "wb") as f:
         pickle.dump(raw_shap_dict, f)
 
-    print(f"Finished training and SHAP value computing for site: {configuration.site}")  # CHANGED 'site' to 'SITE'
+    print(f"Finished training and SHAP value computing for site: {configuration.site.name}")  # CHANGED 'site' to 'SITE'
 
     return
 

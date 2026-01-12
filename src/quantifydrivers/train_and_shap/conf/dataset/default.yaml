@@ -7,3 +7,7 @@ end_date_test:    "2023-12-31"
 months: [6, 7, 8]
 start_lag: 1
 lags_era5: 1
+use_spei: False
+spei_spi: "spei"
+scales_spei: ['30','60']
+distribution: "gamma"

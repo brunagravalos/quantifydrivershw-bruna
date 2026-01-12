@@ -82,11 +82,11 @@ def training(configuration,datasets, device, generator, timestamp):
 
     print(f"Loading hyperparameters for percentile: {configuration.percentile}")
     if not configuration.hyperparameters.default_hypms:
-        params = load_hypms_from_file(configuration.site, percentile=configuration.percentile)
+        params = load_hypms_from_file(configuration.site.name, percentile=configuration.percentile)
     if params:
         SITE_HYPMS = params
 
-    print(f"Loaded hyperparameters for {configuration.site}: {SITE_HYPMS}")
+    print(f"Loaded hyperparameters for {configuration.site.name}: {SITE_HYPMS}")
     print(SITE_HYPMS_fixed['lr'], type(SITE_HYPMS_fixed['lr']))
 
     # =================================================================================================================
@@ -188,9 +188,9 @@ def training(configuration,datasets, device, generator, timestamp):
     model_dir = configuration.paths.model_dir
     save_path = os.path.join(
         model_dir,
-        configuration.site,
+        configuration.site.name,
         "trained_models",
-        f"member_{configuration.seed}_{model_name}_{configuration.site}_test_2.pth"
+        f"member_{configuration.seed}_{model_name}_{configuration.site.name}_test_2.pth"
     )
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     torch.save(model.state_dict(), save_path)
@@ -200,12 +200,17 @@ def training(configuration,datasets, device, generator, timestamp):
         'losses_val': losses_val_combined
     }
 
+    if configuration.dataset.use_spei:
+        save_name = f"{configuration.site.name}_{configuration.percentile}_{configuration.seed}_{configuration.dataset.spei_spi}_losses.pkl"
+    else:
+        save_name = f"{configuration.site.name}_{configuration.percentile}_{configuration.seed}_losses.pkl"
+
+
     results_file = os.path.join(
         configuration.paths.results_dir,
-        configuration.site,
-        f"{configuration.site}_{configuration.percentile}_{configuration.seed}",
-        f"{configuration.site}_{configuration.percentile}_{configuration.seed}_losses.pkl"
-    )
+        configuration.site.name,
+        f"{configuration.site.name}_{configuration.percentile}_{configuration.seed}",
+        save_name)
     os.makedirs(os.path.dirname(results_file), exist_ok=True)
 
     with open(results_file, "wb") as f:

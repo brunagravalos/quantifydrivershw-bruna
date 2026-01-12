@@ -2,10 +2,10 @@ defaults:
   - hyperparameters: default
   - paths: marenostrum
   - dataset: default
+  - site: lyon
   - _self_
 
 seed: 1234
-site: "hannover"
 percentile: "90p"
 
 epoch_config:

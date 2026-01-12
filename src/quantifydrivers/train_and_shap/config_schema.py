@@ -15,6 +15,9 @@ class PathsConfig(BaseModel):
     results_dir: str
     shap_dir: str
 
+    file_spei: str
+    file_spi: str
+
 class SiteHyperparameters(BaseModel):
     lr: float = Field(
         ...,
@@ -58,6 +61,16 @@ class HyperparametersConfig(BaseModel):
     )
     site_hypms: SiteHyperparameters
 
+class SiteConfig(BaseModel):
+    name: str
+
+    @validator("name")
+    def validate_site(cls, v):
+        allowed = ["cordoba", "hannover", "stockholm", "lyon", "belgrado", "marrakech"]
+        if v not in allowed:
+            raise ValueError(f"Invalid site '{v}', must be one of: {allowed}")
+        return v
+
 
 # Optional: if you want strict allowed names
 ERA5_ALLOWED = {"g500", "g200", "psl"}
@@ -76,6 +89,12 @@ class DatasetConfig(BaseModel):
     months: List[int] = Field(..., min_items=1)
     start_lag: int = Field(..., ge=0)
     lags_era5: int = Field(..., ge=0)
+
+    use_spei: bool = Field(default=False, description="Whether to use spei or not")
+    spei_spi: str
+    scales_spei: List[str]
+    distribution: str
+
 
 
     # Validate variable names
@@ -139,19 +158,14 @@ class EpochConfig(BaseModel):
 
 class DatasetSchema(BaseModel):
     seed: int
-    site: str
+    site: SiteConfig
     percentile: Literal["90p", "80p", "95p"]
     hyperparameters: HyperparametersConfig
     dataset: DatasetConfig
     epoch_config: EpochConfig
     paths: PathsConfig
 
-    @validator("site")
-    def validate_site(cls, v):
-        allowed = ["cordoba","hannover","stockholm","lyon","belgrado","marrakech"]
-        if v not in allowed:
-            raise ValueError(f"Invalid site '{v}', must be one of: {allowed}")
-        return v
+
 
 def validate_schema(cfg: DictConfig) -> DatasetSchema:
     """Convert Hydra config → Pydantic Schema and validate."""

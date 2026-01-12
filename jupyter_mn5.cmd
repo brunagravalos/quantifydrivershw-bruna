@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --cpus-per-task 3
+#SBATCH --cpus-per-task 20
 #SBATCH --time 01:00:00
 ##SBATCH --exclusive
 #SBATCH --job-name jupyter-notebook-mn5

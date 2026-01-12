@@ -93,7 +93,7 @@ def build_datasets_and_loaders(configuration, generator):
     print(configuration.model_dump().keys())
 
     percentile = configuration.percentile
-    paths = load_mock_paths(configuration.paths.base_folder, configuration.site, percentile)
+    paths = load_mock_paths(configuration.paths.base_folder, configuration.site.name, percentile)
 
     file_local_scale = paths["local"]
     file_g500 = paths["g500"]
@@ -109,6 +109,23 @@ def build_datasets_and_loaders(configuration, generator):
     start_lag = configuration.dataset.start_lag
     lags_era5 = configuration.dataset.lags_era5
     months = configuration.dataset.months
+    use_spei = configuration.dataset.use_spei
+    spei_spi = configuration.dataset.spei_spi
+    scales_spei = configuration.dataset.scales_spei
+
+    if use_spei:
+        if spei_spi == 'spi':
+            files_spei = [f"/path/to/data/spi_data.nc"
+                        for scale_spei in scales_spei]
+        elif spei_spi == 'spei':
+            files_spei = [f"/path/to/data/sepi_data.nc" for scale_spei in scales_spei]
+
+        spei_spi_variable_mapping = {
+        'spei': [f'spei_hg_{scale_spei}' for scale_spei in scales_spei],
+        'spi': [f'spi_{scale_spei}' for scale_spei in scales_spei]
+        }
+
+        spei_variables = spei_spi_variable_mapping[spei_spi]
 
     era5land_train_conf = dict(
         start_date=start_date_train, end_date=end_date_train,
@@ -143,25 +160,33 @@ def build_datasets_and_loaders(configuration, generator):
 
     print(f"Loading hyperparameters for percentile: {percentile}")
     if not configuration.hyperparameters.default_hypms:
-        params = load_hypms_from_file(configuration.site, percentile=percentile)
+        params = load_hypms_from_file(configuration.site.name, percentile=percentile)
     if params:
         SITE_HYPMS = params
 
-    print(f"Loaded hyperparameters for {configuration.site}: {SITE_HYPMS}")
+    print(f"Loaded hyperparameters for {configuration.site.name}: {SITE_HYPMS}")
     print(SITE_HYPMS_fixed['lr'], type(SITE_HYPMS_fixed['lr']))
 
-    print(f"Doing site: {configuration.site}")
-    print(f"*** Setting up file paths for site: {configuration.site} ***")  # NEW PRINT
+    print(f"Doing site: {configuration.site.name}")
+    print(f"*** Setting up file paths for site: {configuration.site.name} ***")  # NEW PRINT
     reset_seeds(generator,configuration.seed)
 
     # -------------------------------
     # 1. CREATE LOCAL-SCALE DATASETS
     # -------------------------------
+    if use_spei:
+        train_dataset = machine_learning.SPEI_extremes_location_dataset(file_path=file_local_scale, file_CO2=file_co2,
+                                                       files_spei=files_spei, **era5land_train_conf,
+                                                       spei_variables=spei_variables, num_lags=7)
+        test_dataset = machine_learning.SPEI_extremes_location_dataset(file_path=file_local_scale, file_CO2=file_co2,
+                                                      files_spei=files_spei, **era5land_test_conf,
+                                                      spei_variables=spei_variables, num_lags=7)
 
-    train_dataset = machine_learning.LocalScale_Dataset_extremes_location_swvl_averaged_including_CO2(
+    else:
+        train_dataset = machine_learning.LocalScale_Dataset_extremes_location_swvl_averaged_including_CO2(
         file_path=file_local_scale, file_CO2=file_co2, **era5land_train_conf)
 
-    test_dataset = machine_learning.LocalScale_Dataset_extremes_location_swvl_averaged_including_CO2(
+        test_dataset = machine_learning.LocalScale_Dataset_extremes_location_swvl_averaged_including_CO2(
         file_path=file_local_scale, file_CO2=file_co2, **era5land_test_conf)
 
 
