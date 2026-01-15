@@ -115,10 +115,10 @@ def build_datasets_and_loaders(configuration, generator):
 
     if use_spei:
         if spei_spi == 'spi':
-            files_spei = [f"/path/to/data/spi_data.nc"
+            files_spei = [configuration.paths.file_spei
                         for scale_spei in scales_spei]
         elif spei_spi == 'spei':
-            files_spei = [f"/path/to/data/sepi_data.nc" for scale_spei in scales_spei]
+            files_spei = [configuration.paths.file_spi for scale_spei in scales_spei]
 
         spei_spi_variable_mapping = {
         'spei': [f'spei_hg_{scale_spei}' for scale_spei in scales_spei],

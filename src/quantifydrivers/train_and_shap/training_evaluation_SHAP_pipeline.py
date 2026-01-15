@@ -41,7 +41,6 @@ if project_src_dir not in sys.path:
 
 from quantifydrivers.train_and_shap.config_schema import validate_schema
 
-
 # SETS DETERMINISM
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"*** Device set to: {device} ***")

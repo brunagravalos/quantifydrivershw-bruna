@@ -581,6 +581,7 @@ raw_shap_dict = {
     'nn': shap_values_nn_raw,
     'cnn': shap_values_cnn_raw,
 }
+print(raw_shap_dict)
 
 # with open(f'/your/path/to/save/SHAP/results', 'wb') as f:
 #   pickle.dump(raw_shap_dict, f)
