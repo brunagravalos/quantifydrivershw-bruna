@@ -22,6 +22,7 @@ _Note: Restart your shell to ensure uv is in your PATH._
 ```
 3. **Sync Environment:** 
 ```
+uv init
 uv sync
 ```
 4. **Activate venv**

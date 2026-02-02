@@ -8,7 +8,7 @@ def nc_to_zarr(nc_path, zarr_path, chunks=None):
 
 # Example usage
 base_nc = Path("/gpfs/scratch/bsc32/bsc214253/mockdata")
-base_zarr = Path("/gpfs/scratch/bsc32/bsc214253/climate_data.zarr")
+base_zarr = Path("/gpfs/scratch/bsc32/bsc214253/climate_data_new.zarr")
 
 # ERA5
 nc_to_zarr(
@@ -31,7 +31,7 @@ nc_to_zarr(
 
 # CO2
 nc_to_zarr(
-    base_nc / "mockLargeScale_data" / "file_CO2.nc",
+    Path("/gpfs/scratch/bsc32/bsc167965/data/daily_co2_JJA_standardized.nc"),
     base_zarr / "aux" / "co2",
     chunks={"time": 500}
 )
@@ -44,6 +44,7 @@ for site in ["cordoba", "hannover", "stockholm","belgrado","marrakech", "lyon"]:
             base_zarr / "era5land" / perc / site,
             chunks={"time": 200}
         )
+
 
 # 1. Initialize the root as a group (mode='a' creates it if missing)
 # This creates the hidden .zgroup file at the top level

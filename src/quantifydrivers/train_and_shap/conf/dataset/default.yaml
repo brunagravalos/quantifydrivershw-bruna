@@ -3,7 +3,7 @@ variables_era5land: ["swvl1", "swvl2", "swvl3"]
 start_date_train: "1950-01-01"
 end_date_train:   "2013-12-31"
 start_date_test:  "2014-01-01"
-end_date_test:    "2023-12-31"
+end_date_test:    "2024-12-31"
 months: [6, 7, 8]
 start_lag: 1
 lags_era5: 1

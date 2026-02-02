@@ -72,7 +72,7 @@ def training(configuration,datasets, device, generator, timestamp):
 
     SITE_HYPMS_fixed = {'lr': configuration.hyperparameters.site_hypms.lr,
                         'w_decay': configuration.hyperparameters.site_hypms.w_decay,
-                        'batch_size': configuration.hyperparameters.site_hypms.batch_size,
+                        'batch_size': 32,
                         'minority_weight_multiplier': configuration.hyperparameters.site_hypms.minority_weight_multiplier}
 
     print(SITE_HYPMS_fixed['lr'], type(SITE_HYPMS_fixed['lr']))

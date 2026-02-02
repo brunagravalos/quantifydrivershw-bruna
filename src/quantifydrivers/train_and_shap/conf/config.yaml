@@ -2,7 +2,7 @@ defaults:
   - hyperparameters: default
   - paths: marenostrum
   - dataset: default
-  - site: cordoba
+  - site: hannover
   - _self_
 
 seed: 1234

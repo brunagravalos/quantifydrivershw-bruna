@@ -4,16 +4,9 @@ from datetime import date
 from omegaconf import DictConfig, OmegaConf
 
 class PathsConfig(BaseModel):
-    file_g500: str
-    file_g200: str
-    file_psl: str
-    file_CO2: str
-    file_local_scale: str
-
     base_folder: str
     model_dir: str
     results_dir: str
-    shap_dir: str
 
     file_spei: str
     file_spi: str
@@ -33,10 +26,6 @@ class SiteHyperparameters(BaseModel):
         description="Weight decay (Optuna range: [1e-5, 1e-1], log-uniform)"
     )
 
-    batch_size: int = Field(
-        ...,
-        description="Batch size (Optuna categorical choices: 16, 32, 64)"
-    )
 
     minority_weight_multiplier: float = Field(
         ...,
@@ -45,12 +34,7 @@ class SiteHyperparameters(BaseModel):
         description="Multiplier for minority class (Optuna range: [1, 10])"
     )
 
-    # Optional additional validation to enforce discrete batch size choices
-    def model_validate(self, *args, **kwargs):
-        obj = super().model_validate(*args, **kwargs)
-        if obj.batch_size not in {16, 32, 64}:
-            raise ValueError("batch_size must be one of: 16, 32, 64")
-        return obj
+
 
 
 
