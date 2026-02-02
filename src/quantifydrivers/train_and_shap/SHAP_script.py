@@ -134,7 +134,6 @@ def compute_SHAP(configuration,datasets, generator, device, timestamp):
         'nn': shap_values_nn_raw,
         'cnn': shap_values_cnn_raw,
     }
-    print(raw_shap_dict)
 
     if configuration.dataset.use_spei:
         save_name = f"{configuration.site.name}_{configuration.percentile}_{configuration.seed}_{configuration.dataset.spei_spi}_shap.pkl"
