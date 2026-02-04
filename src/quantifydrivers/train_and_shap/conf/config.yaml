@@ -1,0 +1,12 @@
+defaults:
+  - hyperparameters: default
+  - paths: marenostrum
+  - dataset: default
+  - site: hannover
+  - _self_
+
+seed: 1234
+percentile: "90p"
+
+epoch_config:
+  epochs: 75
