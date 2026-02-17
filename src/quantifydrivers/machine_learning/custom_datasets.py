@@ -243,9 +243,6 @@ class LocalScale_Dataset_extremes_location_swvl_averaged_including_CO2(Dataset):
             scaler (sklearn.preprocessing.StandardScaler, optional): Pre-fitted scaler for standardization.
         """
 
-
-
-
         self.variables = variables  # Store selected variables
 
         # Load dataset with lagged-data and extreme classification
