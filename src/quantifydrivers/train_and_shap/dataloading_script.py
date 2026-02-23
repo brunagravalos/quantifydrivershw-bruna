@@ -189,8 +189,7 @@ def build_datasets_and_loaders(configuration, generator):
         test_dataset = machine_learning.LocalScale_Dataset_extremes_location_swvl_averaged_including_CO2(
         file_path=file_local_scale, file_CO2=file_co2, **era5land_test_conf)
 
-    train_times = train_dataset.valid_times
-    test_times = test_dataset.valid_times
+
     # --------------------------------------------------------------------------------
 
     # --------------------------------
@@ -198,10 +197,10 @@ def build_datasets_and_loaders(configuration, generator):
     # --------------------------------
 
     train_features_era5 = machine_learning.LargeScale_Dataset_extremes(
-        file_g500, file_g200, file_psl, **era5_train_conf, valid_times=train_times)
+        file_g500, file_g200, file_psl, **era5_train_conf)
 
     test_features_era5 = machine_learning.LargeScale_Dataset_extremes(
-        file_g500, file_g200, file_psl, **era5_test_conf, valid_times=test_times)
+        file_g500, file_g200, file_psl, **era5_test_conf)
 
     dataloader_conf = dict(
         batch_size=SITE_HYPMS['batch_size'],
@@ -230,24 +229,10 @@ def build_datasets_and_loaders(configuration, generator):
     # 4. TRAIN/VAL SPLIT
     # ---------------------------------------
 
-    all_years = np.unique(combined_train.local_data.ds.time.dt.year.values)
-    shuffled_years = all_years.copy()
-    random.shuffle(shuffled_years)
+    train_size = int(0.8 * len(combined_train))
+    val_size = len(combined_train) - train_size
 
-    split_idx = int(0.8 * len(shuffled_years))
-    train_years = shuffled_years[:split_idx]
-    val_years = shuffled_years[split_idx:]
-
-    print(f"Training on years: {sorted(train_years)}")
-    print(f"Validation on years: {sorted(val_years)}")
-
-    sample_years = combined_train.local_data.ds.time.dt.year.values
-
-    train_indices = np.where(np.isin(sample_years, train_years))[0].tolist()
-    val_indices = np.where(np.isin(sample_years, val_years))[0].tolist()
-
-    train_subset = torch.utils.data.Subset(combined_train, train_indices)
-    val_subset = torch.utils.data.Subset(combined_train, val_indices)
+    train_subset, val_subset = random_split(combined_train, [train_size, val_size], generator=generator)
 
 
     # ---------------------------------------

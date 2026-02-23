@@ -125,7 +125,7 @@ class CombinedDataset(torch.utils.data.Dataset):
 # Large-Scale dataset -------------------------------------------------------------------------------------------------
 
 class LargeScale_Dataset_extremes(Dataset):
-    def __init__(self, file_g500, file_g200, file_psl, start_date, end_date, months, start_lag, lags_era5, variables, valid_times, transform=None):
+    def __init__(self, file_g500, file_g200, file_psl, start_date, end_date, months, start_lag, lags_era5, variables, transform=None):
         """
         Args:
             file_g500 (str): Path to the NetCDF file for g500 EOFs.
@@ -283,7 +283,6 @@ class LocalScale_Dataset_extremes_location_swvl_averaged_including_CO2(Dataset):
 
         # Remove NaN values from samples
         valid_indices = ~np.isnan(self.features).any(axis=1)
-        self.valid_times = self.ds.time.values[valid_indices]
         self.features = self.features[valid_indices]
         self.labels = self.labels[valid_indices]
 

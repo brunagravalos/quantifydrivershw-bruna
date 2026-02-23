@@ -75,16 +75,10 @@ def compute_SHAP(configuration,datasets, generator, device, timestamp):
     # Create baseline for SHAP computation --------------------------------------------------------------------------------
     print(f"*** Creating SHAP background dataset (200 samples) ***")  # NEW PRINT
 
-    # Select indices that correspond to a non-heatwave event
-    non_extreme_indices = [
-        i for i, (_, _, label) in enumerate(train_subset_combined)
-        if label == 0  # Or your specific 'non-extreme' class index
-    ]
-
-    background_indices = np.random.choice(non_extreme_indices, 300, replace=False)
 
     background_nn = []
     background_cnn = []
+    background_indices = np.random.choice(len(train_subset_combined), 200, replace=False)
 
     for idx in background_indices:
         nn_input, cnn_input, labels = train_subset_combined[idx]  # Adjust based on your dataset structure
