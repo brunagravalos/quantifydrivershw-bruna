@@ -10,7 +10,8 @@
 #SBATCH --error=process_%j.err
 
 
-SCRIPT_PATH="/gpfs/scratch/bsc32/bsc214253/quantifydrivershw/src/quantifydrivers/utils/utils.py"
+#SCRIPT_PATH="/gpfs/scratch/bsc32/bsc214253/quantifydrivershw/src/quantifydrivers/utils/utils.py"
+SCRIPT_PATH="/gpfs/scratch/bsc32/bsc214253/quantifydrivershw/src/quantifydrivers/train_and_shap/training_evaluation_SHAP_pipeline.py"
 
 #SCRIPT_PATH="/gpfs/scratch/bsc32/bsc214253/quantifydrivershw/src/quantifydrivers/train_and_shap/training_evaluation_SHAP_pipeline.py"
 #CONTAINER_PATH="/gpfs/scratch/bsc32/bsc167965/environments/pangeo_pytorch-202502"
