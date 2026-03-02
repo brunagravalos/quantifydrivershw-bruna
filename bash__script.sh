@@ -37,4 +37,4 @@ SCRIPT_PATH="/gpfs/scratch/bsc32/bsc214253/quantifydrivershw/src/quantifydrivers
 #  python $SCRIPT_PATH 1234
 
 # Run the script inside the uv-managed environment
-uv run python "$SCRIPT_PATH" seed=$CURRENT_SEED site=marrakech
+uv run python "$SCRIPT_PATH" seed=$CURRENT_SEED site=lyon

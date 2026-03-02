@@ -154,6 +154,11 @@ class LargeScale_Dataset_extremes(Dataset):
             lagged_vars_dict["g500"] = [f'lagged_era5g500_anomalies_lag{lag}' for lag in
                                         range(start_lag, lags_era5 + 1)]
 
+            if valid_times is not None:
+                valid_dates = pd.to_datetime(valid_times).normalize()
+                ds_g500['time'] = pd.to_datetime(ds_g500.time.values).normalize()
+                ds_g500 = ds_g500.sel(time=valid_dates)
+
         # g200
         if "g200" in self.variables:
             ds_g200 = open_xr_dataset(file_g200).sel(time=slice(start_date, end_date)).sel(lon=slice(-54, 69))
@@ -163,12 +168,21 @@ class LargeScale_Dataset_extremes(Dataset):
             lagged_vars_dict["g200"] = [f'lagged_era5g200_anomalies_lag{lag}' for lag in
                                         range(start_lag, lags_era5 + 1)]
 
+            if valid_times is not None:
+                valid_dates = pd.to_datetime(valid_times).normalize()
+                ds_g200['time'] = pd.to_datetime(ds_g200.time.values).normalize()
+                ds_g200 = ds_g200.sel(time=valid_dates)
+
         # psl
         if "psl" in self.variables:
             ds_psl = open_xr_dataset(file_psl).sel(time=slice(start_date, end_date)).sel(lon=slice(-54, 69))
             ds_psl = ds_psl.sel(time=ds_psl.time.dt.month.isin(months), drop=True)
             datasets["psl"] = ds_psl
             lagged_vars_dict["psl"] = [f'lagged_era5psl_anomalies_lag{lag}' for lag in range(start_lag, lags_era5 + 1)]
+            if valid_times is not None:
+                valid_dates = pd.to_datetime(valid_times).normalize()
+                ds_psl['time'] = pd.to_datetime(ds_psl.time.values).normalize()
+                ds_psl = ds_psl.sel(time=valid_dates)
 
         for key, ds in datasets.items():
             setattr(self, f"ds_{key}", ds)

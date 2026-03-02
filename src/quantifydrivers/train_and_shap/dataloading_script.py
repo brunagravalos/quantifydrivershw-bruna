@@ -30,6 +30,10 @@ def load_hypms_from_file(site_name, percentile='90p'):
         "HYPMS_optimization_results",
         f"g500_1lag_{site_name}_best_params_{percentile}_with_testing_phase.txt"
     )
+
+    #output_dir = configuration.paths.hyperparameters_dir
+    #file_path = os.path.join(output_dir, f"hyperparameters_{site}_{configuration.percentile}.txt")
+
     print(f"*** Checking hyperparameter file path: {file_path} ***") # NEW PRINT
 
     if not os.path.exists(file_path):

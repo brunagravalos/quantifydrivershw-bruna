@@ -11,6 +11,8 @@ class PathsConfig(BaseModel):
     file_spei: str
     file_spi: str
 
+    hyperparameters_dir: str
+
 class SiteHyperparameters(BaseModel):
     lr: float = Field(
         ...,
